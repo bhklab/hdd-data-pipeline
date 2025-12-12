@@ -17,12 +17,14 @@ binding_db:
 
 
 jump_cp:
+  subdir: "JUMP_CP"
   url: "https://github.com/jump-cellpainting/datasets/raw/refs/heads/main/metadata/compound.csv.gz"
   version: 'cpg0016'
 
 
 
 deep_chem:
+  subdir: "DEEP_CHEM"
   urls:
     blood_brain_barrier: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/BBBP.csv"
     toxcast: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/toxcast_data.csv.gz"
