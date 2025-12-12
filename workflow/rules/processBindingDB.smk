@@ -23,7 +23,7 @@ rule download_BindingDB:
 	
 		res = requests.get(url)
 		
-		with open(outpath / fname,"wb") as f
+		with open(outpath / fname,"wb") as f:
 			f.write(res.content)
 
 
