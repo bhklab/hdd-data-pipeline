@@ -26,7 +26,7 @@ deep_chem:
   urls:
     blood_brain_barrier: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/BBBP.csv"
     toxcast: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/toxcast_data.csv.gz"
-    #tox21: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/tox21.csv.gz"
+    tox21: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/tox21.csv.gz"
     sider: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/sider.csv.gz"
     clintox: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/clintox.csv.gz"
 

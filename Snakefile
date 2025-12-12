@@ -24,7 +24,6 @@ rule all:
 
 
 rule fetch_from_AnnotationDB:
-	
 	input:
 		lincs_file = rules.download_LINCS.output.lincs_raw,
 		jump_file = rules.download_JUMPCP.output.data

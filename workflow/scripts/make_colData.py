@@ -10,7 +10,7 @@ import sys
 from damply import dirs
 import tqdm 
 from itertools import product
-from utils import process_single_drug
+import utils
 import argparse 
 
 
@@ -59,7 +59,7 @@ def main(
 	fingerprint_generators = make_fingerprint_generators(radius_list, dim_list)
 	
 	# store as a dictionary for breaking out as files later
-	fp_data = {k:defaultdict(list) for k in fingerprint_generators.keys()}
+	fp_data = {k:defaultdict(list) for k in fingerprint_generators}
 
 
 	jump_cp_compounds = pd.read_csv(jump_cp_file)
@@ -74,6 +74,7 @@ def main(
 			drug_details = requests.get(drug_query_url).json()[0]
 
 			utils.process_single_drug(
+				drug_info,
 				drug_details = drug_details,
 				colData = colData,
 				fp_data = fp_data,

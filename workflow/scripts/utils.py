@@ -1,10 +1,12 @@
 import pandas as pd
 from typing import List, Dict, Union, Tuple
 from collections import defaultdict
-
+from rdkit import Chem
+from rdkit.Chem import AllChem, DataStructs
 
 def process_single_drug(
-	
+	drug_info,
+
 	drug_details: Dict[str,Union[int,float,str]],
 	
 	colData: defaultdict(list),
@@ -23,8 +25,17 @@ def process_single_drug(
 	
 	) -> None:
 		
+	# Molecule Name
 
-	# Basic name of the molecule
+	colData['Molecule Name'].append(drug_info['name'])
+	colData['Pubchem CID'].append(drug_info['cid'])
+	colData['InChIKey'].append(drug_info['inchikey'])
+	colData['SMILES'].append(drug_info['smiles'])
+
+	# store for later use
+	smiles_str = drug_info['smiles']
+	cid = drug_info['cid']
+
 	colData['Molecular Formula'].append(drug_details['molecular_formula'])
 	colData['IUPAC Name'].append(drug_details['iupac_name'])
 	colData['ChEMBL ID'].append(drug_details['molecule_chembl_id'])
@@ -98,7 +109,7 @@ def process_single_drug(
 
 
 	# Cache bioassays for post-processing
-	all_bioassays[drug_info['cid']] = drug_details['bioassays']
+	all_bioassays[drug_details['cid']] = drug_details['bioassays']
 	seen_bioassays.extend([assay['aid'] for assay in drug_details['bioassays']])
 
 		
