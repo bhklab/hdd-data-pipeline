@@ -8,7 +8,7 @@ version = info['version']
 
 rule download_BindingDB:
 	input:
-		base_url = info['base']
+		base_url = info['base_url']
 
 	output:
 		zipped_data = dirs.RAWDATA / "BINDING_DB" / f"BindingDB_{subset}_{version}_tsv.zip"

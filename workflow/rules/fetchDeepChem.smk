@@ -2,7 +2,7 @@ import pandas as pd
 from damply import dirs
 
 
-
+subdir = config['deep_chem']['subdir']
 
 
 rule download_DeepChem:
@@ -11,10 +11,11 @@ rule download_DeepChem:
 		subdir_name = "DEEP_CHEM"
 
 	output:
-		bbbp = dirs.PROCDATA / input.subdir_name/ "blood_brain_barrier.csv"
-		toxcast = dirs.PROCDATA / input.subdir_name/ "toxcast.csv"
-		sider = dirs.PROCDATA / input.subdir_name/ "sider.csv"
-		clintox = dirs.PROCDATA / input.subdir_name/ "clintox.csv"
+		bbbp = dirs.PROCDATA / subdir/ "blood_brain_barrier.csv",
+		toxcast = dirs.PROCDATA / subdir / "toxcast.csv",
+		sider = dirs.PROCDATA / subdir / "sider.csv",
+		clintox = dirs.PROCDATA / subdir / "clintox.csv",
+		tox21 = dirs.PROCDATA / subdir  / "tox21.csv"
 
 	run: 
 		outpath = dirs.PROCDATA / input.subdir_name

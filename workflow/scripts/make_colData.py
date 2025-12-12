@@ -1,21 +1,13 @@
-from typing import List, Dict, Union
-import pandas as pd
-import numpy as np
-import requests
-import json
+import argparse
 from collections import defaultdict
-from rdkit import Chem
-from rdkit.Chem import AllChem, DataStructs
-import sys
-from damply import dirs
-import tqdm 
 from itertools import product
+from typing import Dict, List
+
+import pandas as pd
+import requests
 import utils
-import argparse 
-
-
-
-
+from damply import dirs
+from rdkit.Chem import AllChem
 
 
 def make_fingerprint_generators(

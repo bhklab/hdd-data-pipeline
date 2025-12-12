@@ -1,8 +1,9 @@
-import pandas as pd
-from typing import List, Dict, Union, Tuple
 from collections import defaultdict
+from typing import Dict, List, Union
+
+import pandas as pd
 from rdkit import Chem
-from rdkit.Chem import AllChem, DataStructs
+
 
 def process_single_drug(
 	drug_info,
@@ -98,7 +99,7 @@ def process_single_drug(
 
 	# Make the fingerpints
 	rdk_mol = Chem.MolFromSmiles(smiles_str)
-	for fp_type in fingerprint_generators.keys():
+	for fp_type in fingerprint_generators:
 		generator = fingerprint_generators[fp_type]
 		fp = generator.GetCountFingerprintAsNumPy(rdk_mol)
 		fp_data[fp_type]['CID'].append(cid)
