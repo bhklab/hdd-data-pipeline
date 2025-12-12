@@ -1,0 +1,45 @@
+name: "Harmonized Drug Dataset"
+description: "Harmonized collection of drugs with measurements across various types."
+
+
+
+binding_db:
+  base_url: "https://www.bindingdb.org/rwd/bind/downloads/BindingDB"
+  subset: "All"
+  version: "202512"
+  processing:
+    keep_cols: ['PubChem CID','PubChem AID','Target Name','Target Source Organism According to Curator or DataSource', 'Ki (nM)', 'Kd (nM)', 'Curation/DataSource']
+    keep_organisms: ['Homo sapiens (Human)','Homo sapiens']
+    organism_col: 'Target Source Organism According to Curator or DataSource'
+    output_cols: ['PubChem CID','Target Name','Ki (nM)', 'Kd (nM)']
+    assay_col: 'PubChem AID'
+    cid_col: 'PubChem CID'
+
+
+jump_cp:
+  url: "https://github.com/jump-cellpainting/datasets/raw/refs/heads/main/metadata/compound.csv.gz"
+  version: 'cpg0016'
+
+
+
+deep_chem:
+  urls:
+    blood_brain_barrier: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/BBBP.csv"
+    toxcast: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/toxcast_data.csv.gz"
+    #tox21: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/tox21.csv.gz"
+    sider: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/sider.csv.gz"
+    clintox: "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/clintox.csv.gz"
+
+
+lincs:
+  version: "2020"
+  url: "https://s3.amazonaws.com/macchiato.clue.io/builds/LINCS2020/compoundinfo_beta.txt"
+
+
+
+colData:
+  db_url: 'https://annotationdb.bhklab.ca/compound/all'
+  fingerprints:
+    radius_list: [2,3]
+    dim_list: [1024,2048]
+

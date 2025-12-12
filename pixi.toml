@@ -34,6 +34,7 @@ pip = "*"
 pandas = ">=2.3.3,<3"
 tqdm = ">=4.67.1,<5"
 pubchempy = ">=1.0.5,<2"
+click = ">=8.3.1,<9"
 
 [pypi-dependencies]
 damply = ">=0.10.0, <0.11"
