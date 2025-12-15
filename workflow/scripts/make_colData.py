@@ -9,7 +9,7 @@ import utils
 from damply import dirs
 from rdkit.Chem import AllChem
 import tqdm
-
+import sys
 
 def main(
 	db_url:str, 
@@ -35,11 +35,11 @@ def main(
 
 	# read in jumpcp and lincs
 	jump_cp_compounds = pd.read_csv(jump_cp_file)
-	lincs_compounds = pd.read_csv(lincs_file,sep="\t")
+	lincs_compounds = pd.read_csv(lincs_file)
 	blood_brain_perm = pd.read_csv(bbbp_file)
-
+	#print(blood_brain_perm)
 	
-	for drug_info in tqdm.tqdm(response[:100]):
+	for drug_info in tqdm.tqdm(response):
 		
 
 		try:
@@ -55,9 +55,9 @@ def main(
 				seen_bioassays = seen_bioassays,
 				lincs_compounds = lincs_compounds,
 				jump_cp_compounds = jump_cp_compounds,
-				blood_brain_perm = blood_brain_perm
+				blood_brain_perm = blood_brain_perm,
+                cids = cids
 				)
-		
 		except:
 			error_cids.append(drug_info['cid'])
 	
@@ -71,11 +71,11 @@ def main(
 
 	# process the bioassays since we have the data here.
 	seen_bioassays = sorted(list(set(seen_bioassays)))
+	#print(seen_bioassays)
 	aid_to_idx = {seen_bioassays[i]:i for i in range(len(seen_bioassays))}
 	num_assays = len(seen_bioassays)
 	num_cpds = len(cids)
 	cid_to_idx = {cids[i]:i for i in range(len(cids))}
-
 	bioassay_res = defaultdict(list)
 	for cpd in cids:
 		assay_subset = all_bioassays[cpd]

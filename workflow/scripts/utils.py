@@ -3,7 +3,7 @@ from typing import Dict, List, Union
 
 import pandas as pd
 from rdkit import Chem
-
+import sys
 
 def process_single_drug(
 	drug_info,
@@ -20,7 +20,9 @@ def process_single_drug(
 	
 	jump_cp_compounds: pd.DataFrame,
 
-	blood_brain_perm: pd.DataFrame
+	blood_brain_perm: pd.DataFrame,
+
+	cids: List
 	
 	) -> None:
 		
@@ -30,7 +32,7 @@ def process_single_drug(
 	colData['Pubchem CID'].append(drug_info['cid'])
 	colData['InChIKey'].append(drug_info['inchikey'])
 	colData['SMILES'].append(drug_info['smiles'])
-
+	cids.append(drug_info['cid'])
 	# store for later use
 	smiles_str = drug_info['smiles']
 	cid = drug_info['cid']
@@ -43,7 +45,7 @@ def process_single_drug(
 
 	# MOA and Approval
 	mechanisms = drug_details['mechanisms']
-	
+
 
 	
 	if len(mechanisms)==0:
@@ -69,11 +71,15 @@ def process_single_drug(
 	#colData['Hepatotoxiciy Likelihood (Score)'].append(score)
 
 	## Check Against The Broad Data
-	
+
+	#print("pingo herebo")
+	#print(lincs_compounds)
+	#print(lincs_compounds['inchi_key'].value_counts())	
 	l1k_subset = lincs_compounds[lincs_compounds['inchi_key']==drug_info['inchikey']]
 	jump_subset = jump_cp_compounds[jump_cp_compounds['Metadata_InChIKey']==drug_info['inchikey']]
-	
+
 	if l1k_subset.shape[0]==0:
+		#print("thrig  plibbus")
 		colData['In L1000'].append(False)
 		colData['L1000 ID'].append("-")
 	else:
@@ -89,7 +95,7 @@ def process_single_drug(
 		colData['JUMP-CP ID'].append(jump_subset['Metadata_JCP2022'].values[0])
 
 
-	blood_brain = blood_brain_perm[blood_brain_perm['cid']==cid]
+	blood_brain = blood_brain_perm[blood_brain_perm['smiles']==smiles_str]
 	if blood_brain.shape[0]==0:
 		colData['BBB Permeable'].append('Unknown')
 	else:
