@@ -39,7 +39,7 @@ def main(
 	blood_brain_perm = pd.read_csv(bbbp_file)
 
 	
-    for drug_info in tqdm.tqdm(response):
+	for drug_info in tqdm.tqdm(response[:100]):
 		
 
 		try:
