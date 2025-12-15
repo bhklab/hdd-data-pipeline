@@ -2,7 +2,7 @@ from pathlib import Path
 from damply import dirs
 
 
-config: "config/pipeline.yaml"
+configfile: "config/pipeline.yaml"
 
 ### these are the downloading processes
 include: "workflow/rules/processBindingDB.smk"
@@ -14,9 +14,11 @@ include: "workflow/rules/fetchDeepChem.smk"
 
 rule all:
 	input: 
-		rules.fetch_from_AnnotationDB.output.colData,
-		rules.fetch_from_AnnotationDB.output.bioassays,
-		rules.make_bindingdb_experiment.output.bdb_experiment
+		cold = dirs.PROCDATA / "colData.csv",
+		bioassay = dirs.PROCDATA / "experiments" / "bioassays.csv"
+		#.output.colData,
+		#fetch_from_AnnotationDB.output.bioassays,
+		#rules.make_bindingdb_experiment.output.bdb_experiment
 
 
 ## this will also pull and make the bioassay experiments
