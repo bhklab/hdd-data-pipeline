@@ -7,11 +7,13 @@ subdir = config['jump_cp']['subdir']
 version = config['jump_cp']['version']
 
 rule download_JUMPCP:
+	
 	params:
 		cpd_url = config['jump_cp']['url'],
+	
 	output: 
 		data = dirs.RAWDATA / subdir  / version  /"JUMP_CP_compounds.csv"
-
+	
 	run:
 		outpath = dirs.RAWDATA / subdir / version
 		Path(outpath).mkdir(parents=True,exist_ok=True)

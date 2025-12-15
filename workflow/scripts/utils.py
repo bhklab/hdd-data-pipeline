@@ -12,8 +12,6 @@ def process_single_drug(
 	
 	colData: defaultdict(list),
 
-	fp_data:Dict[str, defaultdict(list)],
-
 	all_bioassays:Dict[str,Dict],
 	
 	seen_bioassays:List[int],
@@ -21,8 +19,8 @@ def process_single_drug(
 	lincs_compounds: pd.DataFrame,
 	
 	jump_cp_compounds: pd.DataFrame,
-	
-	fingerprint_generators: Dict[str,rdkit.Chem.rdFingerprintGenerator]
+
+	blood_brain_perm: pd.DataFrame
 	
 	) -> None:
 		
@@ -91,24 +89,13 @@ def process_single_drug(
 		colData['JUMP-CP ID'].append(jump_subset['Metadata_JCP2022'].values[0])
 
 
-	blood_brain = bbbp[bbbp['cid']==cid]
+	blood_brain = blood_brain_perm[blood_brain_perm['cid']==cid]
 	if blood_brain.shape[0]==0:
 		colData['BBB Permeable'].append('Unknown')
 	else:
 		colData['BBB Permeable'].append(blood_brain['p_np'].values[0])
 
-	# Make the fingerpints
-	rdk_mol = Chem.MolFromSmiles(smiles_str)
-	for fp_type in fingerprint_generators:
-		generator = fingerprint_generators[fp_type]
-		fp = generator.GetCountFingerprintAsNumPy(rdk_mol)
-		fp_data[fp_type]['CID'].append(cid)
-		for dim in range(fp.shape[0]):
-			fp_data[fp_type][f'V{dim+1}'].append(fp[dim].item())
-		
 	
-
-
 	# Cache bioassays for post-processing
 	all_bioassays[drug_details['cid']] = drug_details['bioassays']
 	seen_bioassays.extend([assay['aid'] for assay in drug_details['bioassays']])
