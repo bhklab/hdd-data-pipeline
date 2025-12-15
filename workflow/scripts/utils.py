@@ -65,8 +65,8 @@ def process_single_drug(
 	colData['DILI Severity'].append(drug_details['toxicity'][ "dili_severity_grade"])
 	colData['DILI Annotation'].append(drug_details['toxicity']["dili_annotation"])
 	colData['Hepatotoxiciy Likelihood (Detailed)'].append(drug_details['toxicity']["hepatotoxicity_likelihood_score"])
-	score = drug_details['toxicity']["hepatotoxicity_likelihood_score"].split(":")[1].lstrip().split()[0]
-	colData['Hepatotoxiciy Likelihood (Score)'].append(score)
+	#score = drug_details['toxicity']["hepatotoxicity_likelihood_score"].split(":")[1].lstrip().split()[0]
+	#colData['Hepatotoxiciy Likelihood (Score)'].append(score)
 
 	## Check Against The Broad Data
 	

@@ -26,7 +26,7 @@ rule fetch_from_AnnotationDB:
 
 	output:
 		colData = dirs.PROCDATA/ "colData.csv",
-		bioassays = dirs.PROCDATA / "bioassays.csv"
+		bioassays = dirs.PROCDATA / "experiments" /  "bioassays.csv"
 
 	shell:
 		"python3 ./workflow/scripts/make_colData.py -u {params.db_url} -l {input.lincs_file} -j {input.jump_file} -b {input.bbbp_file}"

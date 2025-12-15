@@ -2,7 +2,7 @@ import argparse
 from collections import defaultdict
 from itertools import product
 from typing import Dict, List
-
+from pathlib import Path
 import pandas as pd
 import requests
 import utils
@@ -44,7 +44,7 @@ def main(
 
 		try:
 
-			drug_query_url = f'https://annotationdb.bhklab.ca/compound/many?compounds={drug_info['cid']}&format=json'
+			drug_query_url = f'https://annotationdb.bhklab.ca/compound/many?compounds={drug_info['cid']}&format=json&bioassay=true&mechanism=true&toxicity=true'
 			drug_details = requests.get(drug_query_url).json()[0]
 
 			utils.process_single_drug(
@@ -61,7 +61,9 @@ def main(
 		except:
 			error_cids.append(drug_info['cid'])
 	
-
+	for k in colData.keys():
+		print(k)
+		print(len(colData[k]))
 	# write and store colData
 	colData = pd.DataFrame(colData)
 	colData.to_csv(dirs.PROCDATA / "colData.csv",index=False)
@@ -91,7 +93,7 @@ def main(
 	outpath = Path(dirs.PROCDATA / "experiments")
 	bioassay_res = pd.DataFrame(bioassay_res,index=[f"AID_{aid}" for aid in seen_bioassays])
 	bioassay_res.reset_index(drop=False, inplace= True, names = 'Assay')
-	bioassay_res.to_csv(dirs.PROCDATA /  "bioassays.csv",index = False)
+	bioassay_res.to_csv(outpath / "bioassays.csv",index = False)
 
 	
 
