@@ -12,14 +12,6 @@ include: "workflow/rules/fetchDeepChem.smk"
 
 ### rules for processing the assay files
 
-rule all:
-	input: 
-		cold = dirs.PROCDATA / "colData.csv",
-		bioassay = dirs.PROCDATA / "experiments" / "bioassays.csv"
-		#.output.colData,
-		#fetch_from_AnnotationDB.output.bioassays,
-		#rules.make_bindingdb_experiment.output.bdb_experiment
-
 
 ## this will also pull and make the bioassay experiments
 
@@ -39,7 +31,11 @@ rule fetch_from_AnnotationDB:
 	shell:
 		"python3 ./workflow/scripts/make_colData.py -u {params.db_url} -l {input.lincs_file} -j {input.jump_file} -b {input.bbbp_file}"
 		
-
+rule all:
+	input: 
+		rules.fetch_from_AnnotationDB.output.colData,
+		rules.fetch_from_AnnotationDB.output.bioassays
+		
 # rule make_fingerprints:
 # 	params:
 # 		radius_list = config['colData']['fingerprints']['radius_list'],

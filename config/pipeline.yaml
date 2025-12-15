@@ -34,6 +34,7 @@ deep_chem:
 
 
 lincs:
+  subdir: "LINCS"
   version: "2020"
   url: "https://s3.amazonaws.com/macchiato.clue.io/builds/LINCS2020/compoundinfo_beta.txt"
 

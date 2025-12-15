@@ -2,25 +2,24 @@ import pandas as pd
 from damply import dirs
 
 deep_chem_urls = config['deep_chem']['urls']
-subdir = config['deep_chem']['subdir']
+deepchem_subdir = config['deep_chem']['subdir']
 		
 
 
 rule download_DeepChem:	
 	output:
-		bbbp = dirs.PROCDATA / subdir/ "blood_brain_barrier.csv",
-		toxcast = dirs.PROCDATA / subdir / "toxcast.csv",
-		sider = dirs.PROCDATA / subdir / "sider.csv",
-		clintox = dirs.PROCDATA / subdir / "clintox.csv",
-		tox21 = dirs.PROCDATA / subdir  / "tox21.csv"
+		bbbp = dirs.PROCDATA /deepchem_subdir/ "blood_brain_barrier.csv",
+		toxcast = dirs.PROCDATA / deepchem_subdir / "toxcast.csv",
+		sider = dirs.PROCDATA / deepchem_subdir / "sider.csv",
+		clintox = dirs.PROCDATA / deepchem_subdir / "clintox.csv",
+		tox21 = dirs.PROCDATA / deepchem_subdir  / "tox21.csv"
 
 	run: 
-		
-		outpath = dirs.PROCDATA / subdir
+		outpath = dirs.PROCDATA / deepchem_subdir
 		Path(outpath).mkdir(parents=True,exist_ok=True)
 		
-		for dataset in  params.deep_chem_urls.keys():
-			
+		for dataset in deep_chem_urls.keys():
+			#print(dataset)
 			url = deep_chem_urls[dataset]
 			
 			if url[-3:]==".gz":

@@ -4,18 +4,18 @@ import requests
 from pathlib import Path
 
 
-subdir = config['jump_cp']['subdir']
-version = config['jump_cp']['version']
+jumpcp_subdir = config['jump_cp']['subdir']
+jumpcp_version = config['jump_cp']['version']
 
 
 rule download_JUMPCP:	
 	params:
 		cpd_url = config['jump_cp']['url']
 	output: 
-		data = dirs.RAWDATA / subdir / version  /"JUMP_CP_compounds.csv"
+		data = dirs.RAWDATA / jumpcp_subdir / jumpcp_version  /"JUMP_CP_compounds.csv"
 	
 	run:
-		outpath = dirs.RAWDATA / subdir / version
+		outpath = dirs.RAWDATA / jumpcp_subdir / jumpcp_version
 		Path(outpath).mkdir(parents=True,exist_ok=True)
 		
 

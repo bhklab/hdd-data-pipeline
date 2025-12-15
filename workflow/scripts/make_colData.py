@@ -8,16 +8,12 @@ import requests
 import utils
 from damply import dirs
 from rdkit.Chem import AllChem
-
+import tqdm
 
 
 def main(
 	db_url:str, 
 
-	radius_list:List[int],
-
-	dim_list:List[int],
-	
 	lincs_file:str,	
 
 	jump_cp_file:str,	
@@ -43,7 +39,7 @@ def main(
 	blood_brain_perm = pd.read_csv(bbbp_file)
 
 	
-	for drug_info in response:
+    for drug_info in tqdm.tqdm(response):
 		
 
 		try:
@@ -63,7 +59,7 @@ def main(
 				)
 		
 		except:
-			errs.append(drug_info['cid'])
+			error_cids.append(drug_info['cid'])
 	
 
 	# write and store colData
