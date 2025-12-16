@@ -61,9 +61,7 @@ def main(
 		except:
 			error_cids.append(drug_info['cid'])
 	
-	for k in colData.keys():
-		print(k)
-		print(len(colData[k]))
+
 	# write and store colData
 	colData = pd.DataFrame(colData)
 	colData.to_csv(dirs.PROCDATA / "colData.csv",index=False)
@@ -71,17 +69,20 @@ def main(
 
 	# process the bioassays since we have the data here.
 	seen_bioassays = sorted(list(set(seen_bioassays)))
+	# seen_bioassays = [aid for aid in seen_bioassays if x in utils.GOLD_STANDARD_AIDS]
 	#print(seen_bioassays)
 	aid_to_idx = {seen_bioassays[i]:i for i in range(len(seen_bioassays))}
 	num_assays = len(seen_bioassays)
 	num_cpds = len(cids)
 	cid_to_idx = {cids[i]:i for i in range(len(cids))}
 	bioassay_res = defaultdict(list)
+	
 	for cpd in cids:
 		assay_subset = all_bioassays[cpd]
 		cpd_results = num_assays*['Not Measured']
 	
 		for assay in assay_subset:
+		
 			assay_idx = aid_to_idx[assay['aid']]
 			outcome = 'Active' if assay['activity_outcome_method']==2 else 'Inactive'
 			cpd_results[assay_idx]=outcome
@@ -93,6 +94,7 @@ def main(
 	outpath = Path(dirs.PROCDATA / "experiments")
 	bioassay_res = pd.DataFrame(bioassay_res,index=[f"AID_{aid}" for aid in seen_bioassays])
 	bioassay_res.reset_index(drop=False, inplace= True, names = 'Assay')
+	# bioassay_res = bioassay_res[blood_brain_perm['Assay'].isin([f"AID_{aid}" for aid in utils.GOLD_STANDARD_AIDS])]
 	bioassay_res.to_csv(outpath / "bioassays.csv",index = False)
 
 	

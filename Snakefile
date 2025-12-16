@@ -22,7 +22,8 @@ rule fetch_from_AnnotationDB:
 	input:
 		lincs_file = rules.download_LINCS.output.lincs_raw,
 		jump_file = rules.download_JUMPCP.output.data,
-		bbbp_file = rules.download_DeepChem.output.bbbp
+		bbbp_file = rules.download_DeepChem.output.bbbp,
+		bdb_file = rules.process_BindingDB.output.cleaned_data
 
 	output:
 		colData = dirs.PROCDATA/ "colData.csv",
