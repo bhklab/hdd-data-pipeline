@@ -32,6 +32,10 @@ ipykernel = "*"
 jupyterlab = "*"
 pip = "*"
 pandas = ">=2.3.3,<3"
+bioconductor-summarizedexperiment = ">=1.36.0,<2"
+bioconductor-multiassayexperiment = ">=1.32.0,<2"
+bioconductor-genomeinfodb = ">=1.42.0,<2"
+bioconductor-genomeinfodbdata = ">=1.2.13,<2"
 
 [pypi-dependencies]
 damply = ">=0.10.0, <0.11"
