@@ -1,0 +1,319 @@
+---
+title: "Harmonized Drug Dataset"
+author: "James Bannon, Michael Tran"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  cache = FALSE,
+  fig.width = 7,
+  fig.height = 5
+)
+options(digits = 3)
+```
+
+# Overview
+
+This report is a quality control walkthrough for the Harmonized Drug Dataset (HDD)
+stored as a `MultiAssayExperiment` (MAE). The dataset harmonizes multiple drug-related
+assays and features across a shared compound universe (PubChem CID) so downstream analyses
+can operate on a consistent sample space.
+
+## Data Sources
+
+The MAE is constructed in `workflow/scripts/construct_MAE.R`. It pulls processed experiments
+from `data/procdata/experiments/` and a `colData` table from `data/procdata/colData.csv`.
+Key sources (from `config/pipeline.yaml` and the workflow scripts) include:
+
+- **BindingDB**: downloaded from the BindingDB site; filtered to human targets and cleaned, then transformed to a CID-by-target affinity
+  matrix.
+- **DeepChem datasets** (Tox21, ToxCast, SIDER, ClinTox): downloaded from DeepChem S3, then re-shaped to CID-by-assay matrices.
+- **Bioassays**: pulled from the BHKLab AnnotationDB alongside compound metadata, then filtered to gold-standard assays.
+- **Fingerprints**: RDKit Morgan count fingerprints generated from SMILES.
+
+# Load HDD
+
+```{r load-data}
+library(MultiAssayExperiment)
+library(SummarizedExperiment)
+library(Matrix)
+
+hdd <- readRDS("data/results/hdd.RDS")
+hdd
+```
+
+# MAE snapshot
+
+```{r mae-snapshot}
+experiment_names <- names(experiments(hdd))
+experiment_names
+
+summarize_experiment <- function(se) {
+  assay_obj <- assays(se)[[1]]
+  data_class <- class(assay_obj)[1]
+  dims <- dim(assay_obj)
+  missing_fraction <- if (is.numeric(assay_obj) || is.logical(assay_obj)) {
+    mean(is.na(assay_obj))
+  } else {
+    mean(is.na(as.vector(assay_obj)))
+  }
+
+  data.frame(
+    assay_name = assayNames(se)[1],
+    rows = dims[1],
+    cols = dims[2],
+    data_class = data_class,
+    missing_fraction = missing_fraction,
+    stringsAsFactors = FALSE
+  )
+}
+
+experiment_summary <- do.call(
+  rbind,
+  lapply(experiments(hdd), summarize_experiment)
+)
+rownames(experiment_summary) <- experiment_names
+experiment_summary
+```
+
+Basic sanity checks for sampleMap completeness.
+
+```{r samplemap-checks}
+# Basic sampleMap sanity checks
+all_in_coldata <- lapply(experiments(hdd), function(se) {
+  all(colnames(se) %in% rownames(colData(hdd)))
+})
+if (all(unlist(all_in_coldata))) {
+  print("All experiments map cleanly to colData.")
+} else {
+  print("Some experiments contain samples missing from colData:")
+  print(all_in_coldata[!unlist(all_in_coldata)])
+}
+
+# Any missing samples per experiment (only report issues)
+missing_samples <- lapply(experiments(hdd), function(se) {
+  setdiff(colnames(se), rownames(colData(hdd)))
+})
+missing_samples <- missing_samples[lengths(missing_samples) > 0]
+if (length(missing_samples) == 0) {
+  print("No missing samples detected in any experiment.")
+} else {
+  print("Missing samples by experiment:")
+  print(missing_samples)
+}
+```
+
+# colData overview
+
+```{r coldata-overview}
+cd <- colData(hdd)
+cd[1:5, 1:min(10, ncol(cd))]
+
+# Quick missingness scan
+missing_by_field <- sapply(cd, function(x) {
+  mean(is.na(x))
+})
+missing_by_field
+```
+
+```{r coldata-basic-stats}
+# Distinct counts for key identifiers
+c(
+  n_compounds = nrow(cd),
+  unique_cids = length(unique(cd$`Pubchem.CID`))
+)
+```
+
+# Experiment walkthroughs
+
+Below, each experiment in the HDD MAE is reviewed.
+
+## BindingDB
+
+A compound-by-target affinity matrix derived from BindingDB. Rows correspond
+to protein targets and columns are PubChem CIDs. Values are affinity measurements in nM.
+
+```{r bindingdb-preview}
+se <- experiments(hdd)[["BindingDB"]]
+assay_mat <- assay(se)
+
+# Dimensions and a small preview
+c(rows = nrow(assay_mat), cols = ncol(assay_mat))
+assay_mat[1:min(5, nrow(assay_mat)), 1:min(6, ncol(assay_mat))]
+```
+
+```{r bindingdb-qc}
+# Missingness by target and compound
+row_missing <- rowMeans(is.na(assay_mat))
+col_missing <- colMeans(is.na(assay_mat))
+summary(row_missing)
+summary(col_missing)
+
+# Value distribution (numeric only)
+summary(as.numeric(assay_mat))
+```
+
+TODO: Seems BindingDB data is really sparse, is this intended?
+TODO: Huge distribution of values, that max doesn't look right.
+
+## Bioassays
+
+A compound-by-assay matrix of PubChem bioassay outcomes. Rows are AIDs
+(assay identifiers) and columns are PubChem CIDs. Entries are categorical (Active,
+Inactive, Not Measured).
+
+```{r bioassays-preview}
+se <- experiments(hdd)[["Bioassays"]]
+assay_mat <- assay(se)
+
+c(rows = nrow(assay_mat), cols = ncol(assay_mat))
+assay_mat[1:min(5, nrow(assay_mat)), 1:min(6, ncol(assay_mat))]
+```
+
+```{r bioassays-qc}
+# Category counts
+assay_mat_chr <- as.matrix(assay_mat)
+assay_values <- as.character(assay_mat_chr)
+category_counts <- sort(table(assay_values, useNA = "ifany"), decreasing = TRUE)
+category_counts
+
+# Missingness proxy: Not Measured rate per assay
+not_measured_rate <- rowMeans(assay_mat_chr == "Not Measured")
+summary(not_measured_rate)
+```
+
+## Tox21
+
+A compound-by-assay matrix for the Tox21 panel. Rows are Tox21 assays and
+columns are PubChem CIDs. Values are typically binary (0/1) with missing values for
+unmeasured compounds.
+
+```{r tox21-preview}
+se <- experiments(hdd)[["Tox21"]]
+assay_mat <- assay(se)
+
+c(rows = nrow(assay_mat), cols = ncol(assay_mat))
+assay_mat[1:min(5, nrow(assay_mat)), 1:min(6, ncol(assay_mat))]
+```
+
+TODO: Looks like `mol_id` should go into colData for this SE.
+TODO: Should we cast to integer types for binary? Currently doubles, also inconsistent with ToxCast below.
+
+```{r tox21-qc}
+# Value distribution
+assay_mat_num <- as.matrix(assay_mat)
+if ("mol_id" %in% rownames(assay_mat_num)) {
+  assay_mat_num <- assay_mat_num[rownames(assay_mat_num) != "mol_id", , drop = FALSE]
+}
+table(as.vector(assay_mat_num), useNA = "ifany")
+
+# Missingness per assay
+summary(rowMeans(is.na(assay_mat_num)))
+```
+
+## ToxCast
+
+A compound-by-assay matrix for the ToxCast panel. Rows are assay endpoints
+and columns are PubChem CIDs. Values are typically binary (0/1) with missing values.
+
+```{r toxcast-preview}
+se <- experiments(hdd)[["ToxCast"]]
+assay_mat <- assays(se)[[1]]
+
+c(rows = nrow(assay_mat), cols = ncol(assay_mat))
+assay_mat[1:min(5, nrow(assay_mat)), 1:min(6, ncol(assay_mat))]
+```
+
+```{r toxcast-qc}
+# Value distribution
+assay_mat_num <- as.matrix(assay_mat)
+table(as.vector(assay_mat_num), useNA = "ifany")
+
+# Missingness per assay
+summary(rowMeans(is.na(assay_mat_num)))
+```
+
+## ClinTox
+
+A compound-by-label matrix for clinical toxicity outcomes. Rows correspond
+to the ClinTox labels (e.g., FDA approval and toxicity) and columns are PubChem CIDs.
+Values are binary (0/1) with missing values for compounds not present in the source dataset.
+
+```{r clintox-preview}
+se <- experiments(hdd)[["ClinTox"]]
+assay_mat <- assay(se)
+
+c(rows = nrow(assay_mat), cols = ncol(assay_mat))
+assay_mat[1:min(5, nrow(assay_mat)), 1:min(6, ncol(assay_mat))]
+```
+
+```{r clintox-qc}
+# Value distribution
+assay_mat_num <- as.matrix(assay_mat)
+table(as.vector(assay_mat_num), useNA = "ifany")
+
+# Missingness per label
+summary(rowMeans(is.na(assay_mat_num)))
+```
+
+## SIDER
+
+A compound-by-side-effect matrix derived from SIDER. Rows are side effect
+categories and columns are PubChem CIDs. Values are binary (0/1) with missing values when
+a compound is not represented.
+
+```{r sider-preview}
+se <- experiments(hdd)[["SIDER"]]
+assay_mat <- assay(se)
+
+c(rows = nrow(assay_mat), cols = ncol(assay_mat))
+assay_mat[1:min(5, nrow(assay_mat)), 1:min(6, ncol(assay_mat))]
+```
+
+```{r sider-qc}
+# Value distribution
+assay_mat_num <- as.matrix(assay_mat)
+table(as.vector(assay_mat_num), useNA = "ifany")
+
+# Missingness per side effect
+summary(rowMeans(is.na(assay_mat_num)))
+```
+
+## Fingerprints (Morgan count fingerprints)
+
+Count-based Morgan fingerprints generated from SMILES for each compound using RDKit.
+Each fingerprint experiment is stored as a sparse matrix of feature counts with rows as
+fingerprint bins and columns as PubChem CIDs.
+
+```{r fingerprints-discovery}
+fp_names <- grep("^fingerprint\\.", experiment_names, value = TRUE)
+fp_names
+```
+
+```{r fingerprints-preview}
+for (fp_name in fp_names) {
+  se <- experiments(hdd)[[fp_name]]
+  assay_mat <- assays(se)[[1]]
+
+  cat("\nFingerprint:", fp_name, "\n")
+  cat("Dimensions:", nrow(assay_mat), "x", ncol(assay_mat), "\n")
+
+  # Sparsity for sparse matrices
+  if (inherits(assay_mat, "sparseMatrix")) {
+    sparsity <- 1 - Matrix::nnzero(assay_mat) / length(assay_mat)
+    cat("Sparsity:", round(sparsity, 4), "\n")
+  }
+
+  print(assay_mat[1:min(5, nrow(assay_mat)), 1:min(6, ncol(assay_mat))])
+}
+```
