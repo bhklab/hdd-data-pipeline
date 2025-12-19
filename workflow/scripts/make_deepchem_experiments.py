@@ -5,12 +5,16 @@ import argparse
 def process_deepchem_data(
 	colData: pd.DataFrame, 
 	data: pd.DataFrame,
-	index_name:str 
+	index_name:str,
+	convert_to_int: bool = False
 	) -> pd.DataFrame:
 	
 	measurement_cols = [col_name for col_name in data.columns if col_name not in ['smiles','mol_id']]
-	data = pd.merge(colData,data,left_on = 'SMILES', right_on = 'smiles')
+	if convert_to_int:
+		data[measurement_cols] = df[measurement_cols].astype(int)
 
+	data = pd.merge(colData,data,left_on = 'SMILES', right_on = 'smiles')
+	
 	data = data[['Pubchem CID'] + measurement_cols].transpose()
 	data = data.rename(columns = data.iloc[0])
 	data = data.iloc[1:,]
@@ -26,7 +30,7 @@ def main():
 	
 	clintox = process_deepchem_data(colData,clintox,"Clinical Tox Result")
 	sider = process_deepchem_data(colData,sider, "Side Effect")
-	tox21 = process_deepchem_data(colData,tox21,"Tox Assay")
+	tox21 = process_deepchem_data(colData,tox21,"Tox Assay",True)
 	toxcast = process_deepchem_data(colData,toxcast, "Tox Assay") 
 	
 
@@ -34,6 +38,8 @@ def main():
 	sider.to_csv(dirs.PROCDATA / "experiments" / "sider.csv",index = False)
 	tox21.to_csv(dirs.PROCDATA / "experiments" / "tox21.csv",index=False)
 	toxcast.to_csv(dirs.PROCDATA / "experiments" / "toxcast.csv",index=False)
+
+
 if __name__ == '__main__':
 
 	main()
