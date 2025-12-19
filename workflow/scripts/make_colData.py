@@ -28,8 +28,13 @@ def main(db_url: str, lincs_file: str, jump_cp_file: str, bbbp_file: str) -> Non
 	# print(blood_brain_perm)
 
 	for drug_info in tqdm.tqdm(response):
+		keys_before = set(colData.keys())
+		coldata_lengths = {k: len(v) for k, v in colData.items()}
+		seen_len = len(seen_bioassays)
+		cids_len = len(cids)
+
 		try:
-			drug_query_url = f'https://annotationdb.bhklab.ca/compound/many?compounds={drug_info["cid"]}&format=json&bioassay=true&mechanism=true&toxicity=true'
+			drug_query_url = f"https://annotationdb.bhklab.ca/compound/many?compounds={drug_info['cid']}&format=json&bioassay=true&mechanism=true&toxicity=true"
 			drug_details = requests.get(drug_query_url).json()[0]
 
 			utils.process_single_drug(
@@ -43,8 +48,16 @@ def main(db_url: str, lincs_file: str, jump_cp_file: str, bbbp_file: str) -> Non
 				blood_brain_perm=blood_brain_perm,
 				cids=cids,
 			)
-		except:
-			error_cids.append(drug_info['cid'])
+		except Exception:
+			error_cids.append(drug_info["cid"])
+			for k in list(colData.keys()):
+				if k not in keys_before:
+					del colData[k]
+				else:
+					colData[k] = colData[k][: coldata_lengths.get(k, 0)]
+			seen_bioassays[:] = seen_bioassays[:seen_len]
+			cids[:] = cids[:cids_len]
+			all_bioassays.pop(drug_info["cid"], None)
 
 	# write and store colData
 	colData = pd.DataFrame(colData)
