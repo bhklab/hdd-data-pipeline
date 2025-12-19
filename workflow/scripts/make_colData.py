@@ -70,7 +70,7 @@ def main(
 	# process the bioassays since we have the data here.
 	seen_bioassays = sorted(list(set(seen_bioassays)))
 	seen_bioassays = [aid for aid in seen_bioassays if int(aid) in utils.GOLD_STANDARD_AIDS]
-	#print(seen_bioassays)
+	
 	aid_to_idx = {seen_bioassays[i]:i for i in range(len(seen_bioassays))}
 	num_assays = len(seen_bioassays)
 	num_cpds = len(cids)

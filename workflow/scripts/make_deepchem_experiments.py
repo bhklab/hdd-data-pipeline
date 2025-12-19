@@ -8,7 +8,7 @@ def process_deepchem_data(
 	index_name:str 
 	) -> pd.DataFrame:
 	
-	measurement_cols = [col_name for col_name in data.columns if col_name !='smiles']
+	measurement_cols = [col_name for col_name in data.columns if col_name not in ['smiles','mol_id']]
 	data = pd.merge(colData,data,left_on = 'SMILES', right_on = 'smiles')
 
 	data = data[['Pubchem CID'] + measurement_cols].transpose()
