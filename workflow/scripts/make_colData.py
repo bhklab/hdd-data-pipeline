@@ -80,7 +80,10 @@ def main(db_url: str, lincs_file: str, jump_cp_file: str, bbbp_file: str) -> Non
 		cpd_results = num_assays * ['Not Measured']
 
 		for assay in assay_subset:
-			assay_idx = aid_to_idx[assay['aid']]
+			assay_id = assay["aid"]
+			if assay_id not in aid_to_idx:
+				continue
+			assay_idx = aid_to_idx[assay_id]
 			outcome = 'Active' if assay['activity_outcome_method'] == 2 else 'Inactive'
 			cpd_results[assay_idx] = outcome
 
