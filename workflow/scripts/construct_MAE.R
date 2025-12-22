@@ -7,6 +7,16 @@ colData <- read.csv(
   "data/procdata/colData.csv",
   na.strings = c("", "None", "Unknown", "-")
 )
+colnames(colData) <- sub(
+  "^Hepatotoxicity\\.Likelihood\\.\\.Detailed\\.$",
+  "Hepatotoxicity.Likelihood.Detailed",
+  colnames(colData)
+)
+colnames(colData) <- sub(
+  "^Hepatotoxiciy\\.Likelihood\\.\\.Score\\.$",
+  "Hepatotoxicity.Likelihood.Score",
+  colnames(colData)
+)
 rownames(colData) <- colData$Pubchem.CID
 colData <- DataFrame(colData, row.names = rownames(colData))
 
