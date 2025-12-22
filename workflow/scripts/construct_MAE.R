@@ -3,7 +3,10 @@ library(Matrix)
 library(SummarizedExperiment)
 
 
-colData <- read.csv("data/procdata/colData.csv")
+colData <- read.csv(
+  "data/procdata/colData.csv",
+  na.strings = c("", "None", "Unknown", "-")
+)
 rownames(colData) <- colData$Pubchem.CID
 colData <- DataFrame(colData, row.names = rownames(colData))
 
