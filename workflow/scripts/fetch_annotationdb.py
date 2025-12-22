@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import requests
 import tqdm
 
-BATCH_SIZE = 200
+BATCH_SIZE = 50
 RETRIES = 3
 TIMEOUT = 30
 
