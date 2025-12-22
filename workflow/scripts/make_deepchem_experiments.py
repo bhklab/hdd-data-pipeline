@@ -1,4 +1,4 @@
-
+import argparse
 import pandas as pd
 from damply import dirs
 
@@ -24,14 +24,13 @@ def process_deepchem_data(
 	return data
 
 
-def main():
-	colData = pd.read_csv(
-		dirs.PROCDATA / 'colData.csv', usecols=['SMILES', 'Pubchem CID']
-	)
-	clintox = pd.read_csv(dirs.PROCDATA / 'DEEP_CHEM' / 'clintox.csv')
-	tox21 = pd.read_csv(dirs.PROCDATA / 'DEEP_CHEM' / 'tox21.csv')
-	toxcast = pd.read_csv(dirs.PROCDATA / 'DEEP_CHEM' / 'toxcast.csv')
-	sider = pd.read_csv(dirs.PROCDATA / 'DEEP_CHEM' / 'sider.csv')
+def main(coldata_path: str, deepchem_subdir: str) -> None:
+	colData = pd.read_csv(coldata_path, usecols=['SMILES', 'Pubchem CID'])
+	deepchem_root = dirs.PROCDATA / deepchem_subdir
+	clintox = pd.read_csv(deepchem_root / 'clintox.csv')
+	tox21 = pd.read_csv(deepchem_root / 'tox21.csv')
+	toxcast = pd.read_csv(deepchem_root / 'toxcast.csv')
+	sider = pd.read_csv(deepchem_root / 'sider.csv')
 
 	clintox = process_deepchem_data(colData, clintox, 'Clinical Tox Result')
 	sider = process_deepchem_data(colData, sider, 'Side Effect')
@@ -45,20 +44,22 @@ def main():
 
 
 if __name__ == '__main__':
-	main()
+	parser = argparse.ArgumentParser(
+		prog='make_deepchem_experiments',
+		description='Generate DeepChem experiments matrix',
+	)
+	parser.add_argument(
+		'-c',
+		'--coldata',
+		default=str(dirs.PROCDATA / 'colData.csv'),
+		help='colData CSV path',
+	)
+	parser.add_argument(
+		'-s',
+		'--subdir',
+		default='DEEP_CHEM',
+		help='DeepChem subdirectory under procdata',
+	)
+	args = parser.parse_args()
 
-	# parser = argparse.ArgumentParser(
-	# 	prog = 'make_ColData ',
-	# 	description = "Generate the colData and parse other annotationdb data")
-	# parser.add_argument('-u', help = "route to all compounds in database")
-	# parser.add_argument('-l', help = "lincs")
-	# parser.add_argument('-j',help = 'jump cp')
-	# parser.add_argument('-b',help = 'blood brain barrier')
-
-	# args = parser.parse_args()
-
-	# main(
-	# 	db_url = args.u,
-	# 	lincs_file = args.l,
-	# 	jump_cp_file = args.j,
-	# 	bbbp_file = args.b)
+	main(coldata_path=args.coldata, deepchem_subdir=args.subdir)
