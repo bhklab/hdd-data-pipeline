@@ -206,9 +206,6 @@ c(rows = nrow(assay_mat), cols = ncol(assay_mat))
 assay_mat[1:min(5, nrow(assay_mat)), 1:min(6, ncol(assay_mat))]
 ```
 
-TODO: Looks like `mol_id` should go into colData for this SE.
-TODO: Should we cast to integer types for binary? Currently doubles, also inconsistent with ToxCast below.
-
 ```{r tox21-qc}
 # Value distribution
 assay_mat_num <- as.matrix(assay_mat)
