@@ -11,6 +11,7 @@ import tqdm
 BATCH_SIZE = 50
 RETRIES = 3
 TIMEOUT = 30
+SPLIT_STATUS_CODES = {413, 429, 500, 502, 503, 504}
 
 
 def fetch_json(
@@ -29,6 +30,67 @@ def fetch_json(
 			if attempt == retries - 1:
 				raise
 			time.sleep(2 * (attempt + 1))
+
+
+def fetch_details_for_cids(
+	session: requests.Session,
+	details_url: str,
+	cids: List[str],
+	failed_cids: List[str],
+) -> List[Dict[str, object]]:
+	if not cids:
+		return []
+
+	params = {
+		"compounds": ",".join(cids),
+		"format": "json",
+		"bioassay": "true",
+		"mechanism": "true",
+		"toxicity": "true",
+	}
+
+	for attempt in range(RETRIES):
+		try:
+			resp = session.get(details_url, params=params, timeout=TIMEOUT)
+			if resp.status_code in SPLIT_STATUS_CODES:
+				raise requests.HTTPError(response=resp)
+			resp.raise_for_status()
+			data = resp.json()
+			if not isinstance(data, list):
+				raise ValueError("Expected list response from /compound/many")
+			return data
+		except requests.HTTPError as exc:
+			status = exc.response.status_code if exc.response is not None else None
+			if status in SPLIT_STATUS_CODES and len(cids) > 1:
+				mid = len(cids) // 2
+				left = fetch_details_for_cids(
+					session, details_url, cids[:mid], failed_cids
+				)
+				right = fetch_details_for_cids(
+					session, details_url, cids[mid:], failed_cids
+				)
+				return left + right
+			if attempt == RETRIES - 1:
+				failed_cids.extend(cids)
+				return []
+			time.sleep(2 * (attempt + 1))
+		except (requests.RequestException, ValueError):
+			if len(cids) > 1:
+				mid = len(cids) // 2
+				left = fetch_details_for_cids(
+					session, details_url, cids[:mid], failed_cids
+				)
+				right = fetch_details_for_cids(
+					session, details_url, cids[mid:], failed_cids
+				)
+				return left + right
+			if attempt == RETRIES - 1:
+				failed_cids.extend(cids)
+				return []
+			time.sleep(2 * (attempt + 1))
+
+	failed_cids.extend(cids)
+	return []
 
 
 def derive_details_url(db_url: str) -> str:
@@ -57,6 +119,7 @@ def main(db_url: str, output_path: str) -> None:
 
 	details_url = derive_details_url(db_url)
 	missing_cids: List[int] = []
+	failed_cids: List[str] = []
 	written = 0
 
 	total_batches = (len(compound_list) + BATCH_SIZE - 1) // BATCH_SIZE
@@ -66,16 +129,7 @@ def main(db_url: str, output_path: str) -> None:
 			if not cids:
 				continue
 
-			params = {
-				"compounds": ",".join(cids),
-				"format": "json",
-				"bioassay": "true",
-				"mechanism": "true",
-				"toxicity": "true",
-			}
-			details = fetch_json(session, details_url, params=params)
-			if not isinstance(details, list):
-				raise ValueError("Expected list response from /compound/many")
+			details = fetch_details_for_cids(session, details_url, cids, failed_cids)
 
 			details_by_cid = {item.get("cid"): item for item in details}
 			for drug_info in batch:
@@ -95,6 +149,11 @@ def main(db_url: str, output_path: str) -> None:
 	if missing_cids:
 		print(
 			f"Warning: {len(missing_cids)} CIDs missing from /compound/many response",
+			flush=True,
+		)
+	if failed_cids:
+		print(
+			f"Warning: {len(failed_cids)} CIDs failed after retries",
 			flush=True,
 		)
 	print(f"Wrote {written} compound records to {outpath}", flush=True)
