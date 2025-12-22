@@ -48,6 +48,9 @@ Key sources (from `config/pipeline.yaml` and the workflow scripts) include:
 library(MultiAssayExperiment)
 library(SummarizedExperiment)
 library(Matrix)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
 
 hdd <- readRDS("data/results/hdd.RDS")
 hdd
@@ -164,6 +167,36 @@ summary(col_missing)
 summary(as.numeric(assay_mat))
 ```
 
+```{r bindingdb-plots, fig.height=5, fig.width=8}
+bindingdb_missing <- tibble::tibble(
+  missing_fraction = c(row_missing, col_missing),
+  axis = rep(c("Target", "Compound"), c(length(row_missing), length(col_missing)))
+)
+
+ggplot(bindingdb_missing, aes(x = missing_fraction, fill = axis)) +
+  geom_histogram(bins = 30, alpha = 0.7, position = "identity") +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title = "BindingDB missingness by target vs compound",
+    x = "Missing fraction",
+    y = "Count",
+    fill = ""
+  ) +
+  theme_minimal()
+
+bindingdb_vals <- as.numeric(assay_mat)
+bindingdb_vals <- bindingdb_vals[!is.na(bindingdb_vals) & bindingdb_vals > 0]
+
+ggplot(tibble::tibble(log10_affinity = log10(bindingdb_vals)), aes(x = log10_affinity)) +
+  geom_histogram(bins = 50, fill = "#3A6EA5", alpha = 0.8) +
+  labs(
+    title = "BindingDB affinity values (log10 nM)",
+    x = "log10(affinity nM)",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
 TODO: Seems BindingDB data is really sparse, is this intended?
 TODO: Huge distribution of values, that max doesn't look right.
 
@@ -193,6 +226,33 @@ not_measured_rate <- rowMeans(assay_mat_chr == "Not Measured")
 summary(not_measured_rate)
 ```
 
+```{r bioassays-plots, fig.height=6, fig.width=8}
+bio_long <- as.data.frame(assay_mat_chr) %>%
+  tibble::rownames_to_column("assay") %>%
+  tidyr::pivot_longer(-assay, names_to = "compound", values_to = "status")
+bio_long$status <- factor(bio_long$status, levels = c("Active", "Inactive", "Not Measured"))
+
+ggplot(bio_long, aes(x = status)) +
+  geom_bar(fill = "#4C78A8") +
+  labs(
+    title = "Bioassays overall category counts",
+    x = "Outcome",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+ggplot(bio_long, aes(x = assay, fill = status)) +
+  geom_bar(position = "fill") +
+  coord_flip() +
+  labs(
+    title = "Bioassays outcome composition by assay",
+    x = "Assay (AID)",
+    y = "Fraction",
+    fill = ""
+  ) +
+  theme_minimal()
+```
+
 ## Tox21
 
 A compound-by-assay matrix for the Tox21 panel. Rows are Tox21 assays and
@@ -219,6 +279,38 @@ table(as.vector(assay_mat_num), useNA = "ifany")
 summary(rowMeans(is.na(assay_mat_num)))
 ```
 
+```{r tox21-plots, fig.height=5, fig.width=8}
+tox21_long <- as.data.frame(assay_mat_num) %>%
+  tibble::rownames_to_column("assay") %>%
+  tidyr::pivot_longer(-assay, names_to = "compound", values_to = "value")
+tox21_long$value_factor <- factor(tox21_long$value, levels = c(0, 1))
+
+ggplot(tox21_long, aes(x = compound, y = assay, fill = value_factor)) +
+  geom_tile(color = "white") +
+  scale_fill_manual(values = c("0" = "#d1d5db", "1" = "#2563eb"), na.value = "#f3f4f6") +
+  labs(
+    title = "Tox21 outcomes (0/1) by assay and compound",
+    x = "Compound",
+    y = "Assay",
+    fill = ""
+  ) +
+  theme_minimal()
+
+tox21_rate <- tox21_long %>%
+  group_by(assay) %>%
+  summarize(positive_rate = mean(value == 1, na.rm = TRUE), .groups = "drop")
+
+ggplot(tox21_rate, aes(x = reorder(assay, positive_rate), y = positive_rate)) +
+  geom_col(fill = "#4C78A8") +
+  coord_flip() +
+  labs(
+    title = "Tox21 positive rate by assay",
+    x = "Assay",
+    y = "Positive rate"
+  ) +
+  theme_minimal()
+```
+
 ## ToxCast
 
 A compound-by-assay matrix for the ToxCast panel. Rows are assay endpoints
@@ -239,6 +331,50 @@ table(as.vector(assay_mat_num), useNA = "ifany")
 
 # Missingness per assay
 summary(rowMeans(is.na(assay_mat_num)))
+```
+
+```{r toxcast-plots, fig.height=5, fig.width=8}
+toxcast_counts <- as.data.frame(table(value = as.vector(assay_mat_num), useNA = "ifany"))
+
+ggplot(toxcast_counts, aes(x = value, y = Freq)) +
+  geom_col(fill = "#4C78A8") +
+  labs(
+    title = "ToxCast value counts",
+    x = "Value",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+row_non_missing <- rowSums(!is.na(assay_mat_num))
+row_positive <- rowSums(assay_mat_num == 1, na.rm = TRUE)
+row_rate <- row_positive / row_non_missing
+row_rate <- row_rate[!is.na(row_rate)]
+
+ggplot(tibble::tibble(positive_rate = row_rate), aes(x = positive_rate)) +
+  geom_histogram(bins = 30, fill = "#3A6EA5", alpha = 0.8) +
+  labs(
+    title = "ToxCast positive rate by assay",
+    x = "Positive rate",
+    y = "Assay count"
+  ) +
+  theme_minimal()
+
+col_non_missing <- colSums(!is.na(assay_mat_num))
+col_positive <- colSums(assay_mat_num == 1, na.rm = TRUE)
+col_rate <- col_positive / col_non_missing
+toxcast_compound <- tibble::tibble(
+  compound = colnames(assay_mat_num),
+  positive_rate = as.numeric(col_rate)
+)
+
+ggplot(toxcast_compound, aes(x = compound, y = positive_rate)) +
+  geom_col(fill = "#72B7B2") +
+  labs(
+    title = "ToxCast positive rate by compound",
+    x = "Compound",
+    y = "Positive rate"
+  ) +
+  theme_minimal()
 ```
 
 ## ClinTox
@@ -264,6 +400,51 @@ table(as.vector(assay_mat_num), useNA = "ifany")
 summary(rowMeans(is.na(assay_mat_num)))
 ```
 
+```{r clintox-plots, fig.height=5, fig.width=8}
+clintox_counts <- as.data.frame(table(value = as.vector(assay_mat_num), useNA = "ifany"))
+
+ggplot(clintox_counts, aes(x = value, y = Freq)) +
+  geom_col(fill = "#4C78A8") +
+  labs(
+    title = "ClinTox value counts",
+    x = "Value",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+row_non_missing <- rowSums(!is.na(assay_mat_num))
+row_positive <- rowSums(assay_mat_num == 1, na.rm = TRUE)
+row_rate <- row_positive / row_non_missing
+
+clintox_label <- tibble::tibble(
+  label = rownames(assay_mat_num),
+  positive_rate = as.numeric(row_rate)
+)
+
+ggplot(clintox_label, aes(x = reorder(label, positive_rate), y = positive_rate)) +
+  geom_col(fill = "#72B7B2") +
+  coord_flip() +
+  labs(
+    title = "ClinTox positive rate by label",
+    x = "Label",
+    y = "Positive rate"
+  ) +
+  theme_minimal()
+
+col_non_missing <- colSums(!is.na(assay_mat_num))
+col_positive <- colSums(assay_mat_num == 1, na.rm = TRUE)
+col_rate <- col_positive / col_non_missing
+
+ggplot(tibble::tibble(positive_rate = col_rate), aes(x = positive_rate)) +
+  geom_histogram(bins = 30, fill = "#3A6EA5", alpha = 0.8) +
+  labs(
+    title = "ClinTox positive rate across compounds",
+    x = "Positive rate",
+    y = "Compound count"
+  ) +
+  theme_minimal()
+```
+
 ## SIDER
 
 A compound-by-side-effect matrix derived from SIDER. Rows are side effect
@@ -285,6 +466,51 @@ table(as.vector(assay_mat_num), useNA = "ifany")
 
 # Missingness per side effect
 summary(rowMeans(is.na(assay_mat_num)))
+```
+
+```{r sider-plots, fig.height=6, fig.width=8}
+sider_counts <- as.data.frame(table(value = as.vector(assay_mat_num), useNA = "ifany"))
+
+ggplot(sider_counts, aes(x = value, y = Freq)) +
+  geom_col(fill = "#4C78A8") +
+  labs(
+    title = "SIDER value counts",
+    x = "Value",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+row_non_missing <- rowSums(!is.na(assay_mat_num))
+row_positive <- rowSums(assay_mat_num == 1, na.rm = TRUE)
+row_rate <- row_positive / row_non_missing
+
+sider_effects <- tibble::tibble(
+  side_effect = rownames(assay_mat_num),
+  positive_rate = as.numeric(row_rate)
+)
+
+ggplot(sider_effects, aes(x = reorder(side_effect, positive_rate), y = positive_rate)) +
+  geom_col(fill = "#72B7B2") +
+  coord_flip() +
+  labs(
+    title = "SIDER positive rate by side effect",
+    x = "Side effect",
+    y = "Positive rate"
+  ) +
+  theme_minimal()
+
+col_non_missing <- colSums(!is.na(assay_mat_num))
+col_positive <- colSums(assay_mat_num == 1, na.rm = TRUE)
+col_rate <- col_positive / col_non_missing
+
+ggplot(tibble::tibble(positive_rate = col_rate), aes(x = positive_rate)) +
+  geom_histogram(bins = 30, fill = "#3A6EA5", alpha = 0.8) +
+  labs(
+    title = "SIDER positive rate across compounds",
+    x = "Positive rate",
+    y = "Compound count"
+  ) +
+  theme_minimal()
 ```
 
 ## Fingerprints (Morgan count fingerprints)
@@ -313,5 +539,46 @@ for (fp_name in fp_names) {
   }
 
   print(assay_mat[1:min(5, nrow(assay_mat)), 1:min(6, ncol(assay_mat))])
+}
+```
+
+```{r fingerprints-plots, fig.height=5, fig.width=8}
+for (fp_name in fp_names) {
+  se <- experiments(hdd)[[fp_name]]
+  assay_mat <- assays(se)[[1]]
+
+  col_nnz <- Matrix::colSums(assay_mat > 0)
+  row_nnz <- Matrix::rowSums(assay_mat > 0)
+
+  nnz_df <- tibble::tibble(
+    count = c(as.numeric(col_nnz), as.numeric(row_nnz)),
+    axis = rep(c("Compound", "Feature"), c(length(col_nnz), length(row_nnz)))
+  )
+
+  p_nnz <- ggplot(nnz_df, aes(x = count, fill = axis)) +
+    geom_histogram(bins = 30, alpha = 0.7, position = "identity") +
+    scale_fill_brewer(palette = "Set2") +
+    labs(
+      title = paste("Fingerprint non-zero counts:", fp_name),
+      x = "Non-zero features per entity",
+      y = "Count",
+      fill = ""
+    ) +
+    theme_minimal()
+
+  nonzero_vals <- assay_mat@x
+  val_df <- as.data.frame(table(value = nonzero_vals))
+
+  p_vals <- ggplot(val_df, aes(x = value, y = Freq)) +
+    geom_col(fill = "#3A6EA5") +
+    labs(
+      title = paste("Fingerprint count values:", fp_name),
+      x = "Count value",
+      y = "Frequency"
+    ) +
+    theme_minimal()
+
+  print(p_nnz)
+  print(p_vals)
 }
 ```
