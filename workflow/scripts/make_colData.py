@@ -7,6 +7,19 @@ import requests
 import tqdm
 import utils
 from damply import dirs
+import time
+
+
+def fetch_json(url: str, retries: int = 3, timeout: int = 30):
+	for attempt in range(retries):
+		try:
+			resp = requests.get(url, timeout=timeout)
+			resp.raise_for_status()
+			return resp.json()
+		except Exception:
+			if attempt == retries - 1:
+				raise
+			time.sleep(2 * (attempt + 1))
 
 
 def main(db_url: str, lincs_file: str, jump_cp_file: str, bbbp_file: str) -> None:
@@ -19,7 +32,7 @@ def main(db_url: str, lincs_file: str, jump_cp_file: str, bbbp_file: str) -> Non
 	error_cids = []
 
 	# download all the compounds in annotationdb
-	response = requests.get(db_url).json()
+	response = fetch_json(db_url)
 
 	# read in jumpcp and lincs
 	jump_cp_compounds = pd.read_csv(jump_cp_file)
@@ -34,8 +47,8 @@ def main(db_url: str, lincs_file: str, jump_cp_file: str, bbbp_file: str) -> Non
 		cids_len = len(cids)
 
 		try:
-			drug_query_url = f"https://annotationdb.bhklab.ca/compound/many?compounds={drug_info['cid']}&format=json&bioassay=true&mechanism=true&toxicity=true"
-			drug_details = requests.get(drug_query_url).json()[0]
+			drug_query_url = f'https://annotationdb.bhklab.ca/compound/many?compounds={drug_info["cid"]}&format=json&bioassay=true&mechanism=true&toxicity=true'
+			drug_details = fetch_json(drug_query_url)[0]
 
 			utils.process_single_drug(
 				drug_info,
@@ -49,7 +62,7 @@ def main(db_url: str, lincs_file: str, jump_cp_file: str, bbbp_file: str) -> Non
 				cids=cids,
 			)
 		except Exception:
-			error_cids.append(drug_info["cid"])
+			error_cids.append(drug_info['cid'])
 			for k in list(colData.keys()):
 				if k not in keys_before:
 					del colData[k]
@@ -57,7 +70,7 @@ def main(db_url: str, lincs_file: str, jump_cp_file: str, bbbp_file: str) -> Non
 					colData[k] = colData[k][: coldata_lengths.get(k, 0)]
 			seen_bioassays[:] = seen_bioassays[:seen_len]
 			cids[:] = cids[:cids_len]
-			all_bioassays.pop(drug_info["cid"], None)
+			all_bioassays.pop(drug_info['cid'], None)
 
 	# write and store colData
 	colData = pd.DataFrame(colData)
@@ -80,7 +93,7 @@ def main(db_url: str, lincs_file: str, jump_cp_file: str, bbbp_file: str) -> Non
 		cpd_results = num_assays * ['Not Measured']
 
 		for assay in assay_subset:
-			assay_id = assay["aid"]
+			assay_id = assay['aid']
 			if assay_id not in aid_to_idx:
 				continue
 			assay_idx = aid_to_idx[assay_id]
