@@ -13,7 +13,9 @@ def process_deepchem_data(
 		col_name for col_name in data.columns if col_name not in ['smiles', 'mol_id']
 	]
 	if convert_to_int:
-		data[measurement_cols] = data[measurement_cols].astype(int)
+		data[measurement_cols] = data[measurement_cols].apply(
+			lambda col: pd.to_numeric(col, errors="coerce")
+		).astype("Int64")
 
 	data = pd.merge(colData, data, left_on='SMILES', right_on='smiles')
 
