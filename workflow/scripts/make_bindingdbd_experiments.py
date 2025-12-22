@@ -1,17 +1,9 @@
+import argparse
 from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 from damply import dirs
-
-# def main(
-# 	colData: pd.DataFrame,
-# 	bdb_data: pd.DataFrame
-# 	) -> None:
-
-
-# def compute_affinity(ki,kd):
-# 	if isinstance(ki,str):
 
 
 def is_numeric(x):
@@ -19,13 +11,9 @@ def is_numeric(x):
 	return numeric_type
 
 
-def main():
-	colData = pd.read_csv(
-		dirs.PROCDATA / 'colData.csv', usecols=['Pubchem CID', 'SMILES']
-	)
-	binding_db = pd.read_csv(
-		dirs.RAWDATA / 'BINDING_DB' / 'BindingDB_All_202512_cleaned.csv'
-	)
+def main(coldata_path: str, bindingdb_path: str) -> None:
+	colData = pd.read_csv(coldata_path, usecols=['Pubchem CID', 'SMILES'])
+	binding_db = pd.read_csv(bindingdb_path)
 	binding_db = binding_db.dropna(subset=['Ki (nM)', 'Kd (nM)'], how='all')
 	binding_db = binding_db[binding_db['PubChem CID'].isin(colData['Pubchem CID'])]
 	targets = list(pd.unique(binding_db['Target Name']))
@@ -34,7 +22,6 @@ def main():
 	num_cpds = len(cpds)
 	num_tgts = len(targets)
 
-	cpd_to_idx = {cpds[i].item(): i for i in range(num_cpds)}
 	target_to_idx = {targets[i]: i for i in range(num_tgts)}
 	seen_targets = []
 	res = defaultdict(list)
@@ -62,17 +49,22 @@ def main():
 
 
 if __name__ == '__main__':
-	main()
-# if __name__ == '__main__':
-# 	parser = argparse.ArgumentParser(
-# 		prog = 'make_bdb_experiments ',
-# 		description = "Generate the colData and parse other annotationdb data")
-# 	parser.add_argument('-c', help = "coldata")
-# 	parser.add_argument('-b', help = "bdbd")
+	parser = argparse.ArgumentParser(
+		prog='make_bdb_experiments',
+		description='Generate BindingDB experiments matrix',
+	)
+	parser.add_argument(
+		'-c',
+		'--coldata',
+		default=str(dirs.PROCDATA / 'colData.csv'),
+		help='colData CSV path',
+	)
+	parser.add_argument(
+		'-b',
+		'--bindingdb',
+		default=str(dirs.RAWDATA / 'BINDING_DB' / 'BindingDB_All_202512_cleaned.csv'),
+		help='BindingDB cleaned CSV path',
+	)
+	args = parser.parse_args()
 
-# 	args = parser.parse_args()
-
-# 	main(
-# 		colData = args.c,
-# 		bdb_data = args.b
-# 		)
+	main(coldata_path=args.coldata, bindingdb_path=args.bindingdb)
