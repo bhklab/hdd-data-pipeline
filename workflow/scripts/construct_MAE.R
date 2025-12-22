@@ -5,7 +5,7 @@ library(SummarizedExperiment)
 
 colData <- read.csv(
   "data/procdata/colData.csv",
-  na.strings = c("", "None", "Unknown", "-")
+  na.strings = c("NA", "", "None", "Unknown", "-")
 )
 colnames(colData) <- sub(
   "^Hepatotoxicity\\.Likelihood\\.\\.Detailed\\.$",
