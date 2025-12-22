@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 from damply import dirs
 import pandas as pd
 import requests
@@ -61,6 +62,5 @@ rule process_BindingDB:
 		data[params.cid_col] =[int(cid) for cid in data[params.cid_col].values]
 		
 		data.to_csv(output.cleaned_data,index=False)
-
 
 

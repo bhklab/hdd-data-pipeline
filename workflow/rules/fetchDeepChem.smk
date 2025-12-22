@@ -1,4 +1,5 @@
 import pandas as pd
+from pathlib import Path
 from damply import dirs
 
 deep_chem_urls = config['deep_chem']['urls']
