@@ -36,6 +36,8 @@ bioconductor-summarizedexperiment = ">=1.36.0,<2"
 bioconductor-multiassayexperiment = ">=1.32.0,<2"
 bioconductor-genomeinfodb = ">=1.42.0,<2"
 bioconductor-genomeinfodbdata = ">=1.2.13,<2"
+r-rmarkdown = ">=2.30,<3"
+r-tidyverse = ">=2.0.0,<3"
 
 [pypi-dependencies]
 damply = ">=0.10.0, <0.11"
@@ -45,7 +47,7 @@ snakemake = ">=9.14.4, <10"
 tqdm = ">=4.67.1, <5"
 
 [tasks]
-example_script = {cmd="python $SCRIPTS/example_script.py", description="Run an example script"}
+knit_qc = {cmd = "Rscript -e \"rmarkdown::render('qc/hdd_quality_control.Rmd', output_format='html_document')\"", description="Knit the quality control document to HTML file."}
 
 ############################################## QUALITY ###############################################
 # Quality includes linting, type checking, and formatting
