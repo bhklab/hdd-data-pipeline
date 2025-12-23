@@ -582,3 +582,60 @@ for (fp_name in fp_names) {
   print(p_vals)
 }
 ```
+
+
+## Computing with Morgan Fingerprints
+
+
+We now turn to a machine learning task. We will be trying to predict the drugs mechanism of action (MOA) from the drug structures as stored in the fingerprints. Specifically we will try to classify drugs by how likely they are to cause liver injury based on their Drug Induced Liver Injury (DILI) severity score. First lets look at the counts of the scores:
+
+```{r moa-counts}
+col.Data <- colData(hdd) %>% as.data.frame() 
+table(col.Data$DILI.Severity)
+```
+
+We will frame predicting DILI severity as a binary classification problem. To this we will subset the data into high DILI scores (scores of 7 or 8) and low DILI (scores of 2 or 3). 
+
+```{r dili-subsetting}
+high.scores <- c(7,8)
+low.scores <- c(2,3)
+
+dili.High <- col.Data %>% filter(DILI.Severity %in% high.scores) %>% select(Pubchem.CID)
+dili.Low <- col.Data %>% filter(DILI.Severity %in% low.scores) %>% select(Pubchem.CID)
+```
+
+
+Now lets make training and testing datasts using the Morgan fingerprint with radius 3 and with 512 bits. The training set will be 80% of the data we have. 
+
+```{r making-fp-data}
+set.seed(1234)
+
+fps <- assays(hdd)[["fingerprint.Morgan.3.512"]]
+
+high.fps <- as.matrix(t(fps[,as.character(dili.High$Pubchem.CID)]))
+low.fps <- as.matrix(t(fps[,as.character(dili.Low$Pubchem.CID)]))
+
+X <- rbind(high.fps, low.fps)
+rownames(X)<-NULL
+y <- c( rep(1,dim(high.fps)[1]), rep(0,dim(low.fps)[1]))
+
+split.idx <- sample(c(TRUE, FALSE), dim(X)[1], replace=TRUE, prob=c(0.8, 0.2))
+
+X.train <- X[split.idx,]
+y.train <- y[split.idx]
+
+X.test <- X[!split.idx,]
+y.test <- y[!split.idx]
+```
+
+Lastly we fit a logistic regression model and evaluate our prediction in terms of classification accuracy:
+
+```{r predict}
+
+model <- cv.glmnet(X.train, y.train, family = 'binomial')
+preds <- as.numeric(predict(model,X.test,type='class'))
+
+accuracy <- sum(y.test ==preds)/length(y.test)
+accuracy
+```
+
