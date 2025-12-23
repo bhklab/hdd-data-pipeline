@@ -39,6 +39,8 @@ Key sources (from `config/pipeline.yaml` and the workflow scripts) include:
 - **BindingDB**: downloaded from the BindingDB site; filtered to human targets and cleaned, then transformed to a CID-by-target affinity
   matrix.
 - **DeepChem datasets** (Tox21, ToxCast, SIDER, ClinTox): downloaded from DeepChem S3, then re-shaped to CID-by-assay matrices.
+- **JUMP-CP** We accessed the compound info from the JUMP-CP dataset created by the Broad Institute.
+- **LINCS** We accessed the compound info from the 2020 release of the LINCS L1000 perturbatione experiments. These experiments were also conducted by the Broad Institute.
 - **Bioassays**: pulled from the BHKLab AnnotationDB alongside compound metadata, then filtered to gold-standard assays.
 - **Fingerprints**: RDKit Morgan count fingerprints generated from SMILES.
 
@@ -168,6 +170,7 @@ summary(col_missing)
 summary(as.numeric(assay_mat))
 ```
 
+
 ```{r bindingdb-plots, fig.height=5, fig.width=8}
 bindingdb_missing <- tibble::tibble(
   missing_fraction = c(row_missing, col_missing),
@@ -198,8 +201,7 @@ ggplot(tibble::tibble(log10_affinity = log10(bindingdb_vals)), aes(x = log10_aff
   theme_minimal()
 ```
 
-TODO: Seems BindingDB data is really sparse, is this intended?
-TODO: Huge distribution of values, that max doesn't look right.
+We note that the data from BindingDB is quite sparse. This is due to the curation process we used for version 1 which only analyzes the data from BindingDB that database had curated from literature. As such at present the overlap between those compounds and the content of AnnotationDB is small. As AnnotationDB is actively being expanded we anticipate this will change in the near future. 
 
 ## Bioassays
 
