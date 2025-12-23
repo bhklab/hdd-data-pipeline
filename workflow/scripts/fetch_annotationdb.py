@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import requests
 import tqdm
 
-BATCH_SIZE = 50
+BATCH_SIZE = 10
 RETRIES = 3
 TIMEOUT = 30
 SPLIT_STATUS_CODES = {413, 429, 500, 502, 503, 504}
