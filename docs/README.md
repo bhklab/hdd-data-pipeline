@@ -35,6 +35,3 @@ If you haven't installed it yet, [follow these instructions](https://pixi.sh/lat
 pixi install
 ```
 
-## Documentation
-
-Click [here](https://bhklab.github.io/hdd-data-pipeline) to view the full documentation.
