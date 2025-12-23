@@ -101,12 +101,12 @@ def process_single_drug(
 	colData['Hepatotoxicity Likelihood (Detailed)'].append(
 		drug_details['toxicity']['hepatotoxicity_likelihood_score']
 	)
-	score = (
-		drug_details['toxicity']['hepatotoxicity_likelihood_score']
-		.split(':')[1]
-		.lstrip()
-		.split()[0]
-	)
+	hls = drug_details['toxicity']['hepatotoxicity_likelihood_score']
+	score = pd.NA
+	if isinstance(hls, str) and hls:
+		parts = hls.split(':', 1)
+		if len(parts) > 1:
+			score = parts[1].lstrip().split()[0] if parts[1].strip() else pd.NA
 	colData['Hepatotoxiciy Likelihood (Score)'].append(score)
 
 	## Check Against The Broad Data
