@@ -38,6 +38,7 @@ bioconductor-genomeinfodb = ">=1.42.0,<2"
 bioconductor-genomeinfodbdata = ">=1.2.13,<2"
 r-rmarkdown = ">=2.30,<3"
 r-tidyverse = ">=2.0.0,<3"
+r-glmnet = ">=4.1.10,<5"
 
 [pypi-dependencies]
 damply = ">=0.10.0, <0.11"
