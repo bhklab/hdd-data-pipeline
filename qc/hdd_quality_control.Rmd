@@ -615,8 +615,12 @@ set.seed(1234)
 
 fps <- assays(hdd)[["fingerprint.Morgan.3.512"]]
 
-high.fps <- as.matrix(t(fps[,as.character(dili.High$Pubchem.CID)]))
-low.fps <- as.matrix(t(fps[,as.character(dili.Low$Pubchem.CID)]))
+fp.cids <- colnames(fps)
+high.cids <- intersect(as.character(dili.High$Pubchem.CID), fp.cids)
+low.cids <- intersect(as.character(dili.Low$Pubchem.CID), fp.cids)
+
+high.fps <- as.matrix(t(fps[, high.cids, drop = FALSE]))
+low.fps <- as.matrix(t(fps[, low.cids, drop = FALSE]))
 
 X <- rbind(high.fps, low.fps)
 rownames(X)<-NULL
@@ -641,4 +645,3 @@ preds <- as.numeric(predict(model,X.test,type='class'))
 accuracy <- sum(y.test ==preds)/length(y.test)
 accuracy
 ```
-
