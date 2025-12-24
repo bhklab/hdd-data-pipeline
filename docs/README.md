@@ -1,10 +1,10 @@
-# HDD Data Pipelines
+# HDD_v1 Data Pipeline
 
-**Authors:** [James Bannon](https://github.com/jbannon), Michael Tran, Matthew Bocalon, Sisira Kadambat Nair
+**Authors:** [James Bannon](https://github.com/jbannon), Michael Tran, Matthew Boccalon, Sisira Kadambat Nair
 
 **Contact:** [bhklab.jamesbannon@gmail.com](mailto:bhklab.jamesbannon@gmail.com)
 
-**Description:** Pipeline to create the Harmonized Drug Dataset (HDD)
+**Description:** Pipeline to build the Harmonized Drug Dataset Version 1 (HDD_v1) as a MultiAssayExperiment that harmonizes drug measurements, annotations, and fingerprints across multiple sources.
 
 --------------------------------------
 
@@ -18,20 +18,59 @@
 ![GitHub contributors](https://img.shields.io/github/contributors/bhklab/hdd-data-pipeline?style=flat-square)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/bhklab/hdd-data-pipeline?style=flat-square)
 
-## Set Up
+## What the pipeline produces
+
+- `data/results/HDD_v1.RDS`: the Harmonized Drug Dataset Version 1 as a `MultiAssayExperiment`.
+- `data/procdata/colData.csv`: compound metadata assembled from AnnotationDB, LINCS, JUMP-CP, and DeepChem.
+- `data/procdata/experiments/`: assay matrices for BindingDB, bioassays, DeepChem tasks, and fingerprint features.
+- `qc/hdd_quality_control.html`: quality control report (rendered from `qc/hdd_quality_control.Rmd`).
+
+## Quickstart
 
 ### Prerequisites
 
-Pixi is required to run this project.
-If you haven't installed it yet, [follow these instructions](https://pixi.sh/latest/)
+Pixi is required to run this project. If you have not installed it yet, follow the instructions at https://pixi.sh/latest/.
 
-### Installation
-
-1. Clone this repository to your local machine
-2. Navigate to the project directory
-3. Set up the environment using Pixi:
+### Install dependencies
 
 ```bash
 pixi install
 ```
 
+### Run the pipeline
+
+```bash
+pixi run snakemake -c 1
+```
+
+Increase `-c` for more cores. The default Snakemake target builds `data/results/HDD_v1.RDS`.
+
+### Generate the QC report
+
+```bash
+pixi run knit_qc
+```
+
+## Configuration
+
+Data sources, versions, and filtering rules are controlled in `config/pipeline.yaml`. Update this file to:
+
+- Pin different dataset versions or URLs.
+- Adjust BindingDB filtering logic (organisms, columns, assays).
+- Change Morgan fingerprint radii and dimensions.
+
+## Repository layout
+
+- `config/`: pipeline configuration.
+- `workflow/`: Snakemake rules and scripts for data preparation and assembly.
+- `data/rawdata/`: raw downloads (not tracked in Git).
+- `data/procdata/`: processed intermediate datasets (not tracked in Git).
+- `data/results/`: final HDD_v1 output (not tracked in Git).
+- `qc/`: QC notebook and rendered report.
+- `docs/`: project documentation (this file, usage notes, data sources, dev notes).
+
+## Additional documentation
+
+- `docs/usage.md`: how to configure and run the pipeline.
+- `docs/data_sources.md`: data source registry for HDD_v1 inputs.
+- `docs/devnotes.md`: engineering notes and decisions.

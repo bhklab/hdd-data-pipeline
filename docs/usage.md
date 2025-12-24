@@ -1,13 +1,53 @@
 # Usage Guide
 
-## Project Configuration
+## Project configuration
 
-TODO:: discuss how to edit the configuration files in the `config/` directory to match your research parameters
+All pipeline settings live in `config/pipeline.yaml`. The most common edits are:
 
-TODO:: discuss how to add your input data to the `data/rawdata/` directory and document it properly in the `docs/data_sources/` directory
+- **Data source versions and URLs**
+  - BindingDB version and subset
+  - LINCS compound info release
+  - JUMP-CP metadata release
+  - DeepChem dataset URLs
+  - AnnotationDB endpoint
+- **BindingDB filtering**
+  - Organism allowlist
+  - Columns retained in the cleaned export
+- **Fingerprint parameters**
+  - Morgan radii and vector dimensions
 
-TODO:: discuss how to manage and organize your data sources effectively
+If you change versions or URLs, update `docs/data_sources.md` so the provenance stays current.
 
-## Running Your Analysis
+## Data locations
 
-TODO:: discuss using pixi tasks to run the analysis
+The pipeline writes data into three main locations:
+
+- `data/rawdata/`: raw downloads (BindingDB, LINCS, JUMP-CP, AnnotationDB JSONL).
+- `data/procdata/`: processed datasets (colData, experiments, fingerprints).
+- `data/results/`: final HDD_v1 output (`HDD_v1.RDS`).
+
+Raw and processed files are not tracked in Git, so make sure you archive them externally if you need to preserve a run.
+
+## Running the pipeline
+
+Install dependencies with Pixi:
+
+```bash
+pixi install
+```
+
+Run Snakemake from the repository root:
+
+```bash
+pixi run snakemake -c 1
+```
+
+## Quality control
+
+Render the QC report after the pipeline has produced `HDD_v1.RDS`:
+
+```bash
+pixi run knit_qc
+```
+
+The report is saved to `qc/hdd_quality_control.html`.

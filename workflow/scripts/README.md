@@ -1,71 +1,40 @@
-# Scripts Directory
+# Workflow Scripts
 
-## Purpose
+This directory contains the executable scripts used by the Snakemake workflow to build HDD_v1.
 
-This directory contains **reusable code scripts** for:
+## Script catalog
 
-- Data processing pipelines
-- Analysis workflows
-- Utility functions
-- Automation tasks
+- `fetch_annotationdb.py`
+  - Downloads compound metadata from AnnotationDB (`/compound/all` and `/compound/many`).
+  - Output: `data/rawdata/ANNOTATION_DB/compound_details.jsonl`.
 
-## Best Practices for Scripts
+- `process_annotationdb.py`
+  - Parses the AnnotationDB JSONL and joins LINCS, JUMP-CP, and BBBP metadata.
+  - Outputs: `data/procdata/colData.csv` and `data/procdata/experiments/bioassays.csv`.
 
-For maximum usability, scripts should:
+- `make_bindingdbd_experiments.py`
+  - Converts the cleaned BindingDB table into a CID-by-target affinity matrix.
+  - Output: `data/procdata/experiments/binding_db.csv`.
 
-- Include a detailed docstring/header explaining purpose, inputs, outputs
-- Contain inline comments for complex logic
-- Be modular and follow the single responsibility principle
-- Include proper error handling and logging
-- Have command-line interfaces when appropriate
+- `make_deepchem_experiments.py`
+  - Reshapes DeepChem task datasets into CID-by-assay matrices.
+  - Outputs: `data/procdata/experiments/{toxcast,tox21,sider,clintox}.csv`.
 
-## Git Synchronization
+- `make_fingerprints.py`
+  - Generates Morgan count fingerprints from SMILES for configured radii and dimensions.
+  - Output: `data/procdata/experiments/fingerprints/Morgan.*.csv`.
 
-Scripts **ARE tracked in Git** and represent the core reproducible components of your analysis. Ensure scripts:
+- `construct_MAE.R`
+  - Assembles all experiment matrices and colData into a `MultiAssayExperiment`.
+  - Output: `data/results/HDD_v1.RDS`.
 
-- Are well-tested before committing
-- Have clear versioning (consider semantic versioning)
-- Include usage examples in comments or separate documentation
+- `utils.py`
+  - Helper functions shared by AnnotationDB processing scripts (assay filters, field parsing, etc.).
 
-## Organization Recommendations
+- `make_colData.py`
+  - Legacy helper for colData generation. Not used by the current Snakemake workflow.
 
-Consider organizing scripts by their function:
+## Notes
 
-```console
-/scripts/preprocessing/
-/scripts/analysis/
-/scripts/visualization/
-/scripts/utilities/
-```
-
-## Data References
-
-When scripts access data:
-
-- Use command-line arguments or configuration files for file paths
-- Document in `docs/data_sources.md` which scripts use which data sources
-- Consider using symbolic links for consistent references across environments
-
-## Documentation Requirement
-
-It is **highly recommended** to convert scripts to CLI tools using popular libraries
-like `click` or `typer`, which can make them more user-friendly and easier to document.
-
-```console
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-script_name.py
-Usage: script_name.py [options] <input> <output>
-
-Arguments:
-    input     Description of input
-    output    Description of output
-
-Options:
-    -h --help     Show this help
-    -v --verbose  Verbose output
-"""
-```
-
-Remember that well-documented scripts are essential for reproducible research and enable others to understand and build upon your work!
+- Scripts are invoked by rules in `workflow/rules/` and use paths from `damply.dirs`.
+- If you change inputs or URLs in `config/pipeline.yaml`, re-run the pipeline to regenerate outputs.

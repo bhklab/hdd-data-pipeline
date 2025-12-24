@@ -1,74 +1,33 @@
-# Data Sources
+# Data Sources (HDD_v1)
 
-## Overview
+This document lists the external inputs and generated datasets used to build the Harmonized Drug Dataset Version 1 (HDD_v1). Versions and URLs are defined in `config/pipeline.yaml`.
 
-This section should document all data sources used in your project.
-Proper documentation ensures reproducibility and helps others
-understand your research methodology.
+## External data sources
 
-## How to Document Your Data
+| Source | Version | URL / Endpoint | Access Method | Format | Notes |
+| --- | --- | --- | --- | --- | --- |
+| BindingDB (All subset) | 202512 | https://www.bindingdb.org/rwd/bind/downloads/BindingDB_All_202512_tsv.zip | Direct download (Snakemake `download_BindingDB`) | TSV inside ZIP | Filtered to human targets and assays without PubChem AIDs. License and citation are per BindingDB. |
+| LINCS compound info | 2020 | https://s3.amazonaws.com/macchiato.clue.io/builds/LINCS2020/compoundinfo_beta.txt | Direct download (Snakemake `download_LINCS`) | Tab-delimited text | Used for compound metadata cross-references. |
+| JUMP-CP compound metadata | cpg0016 | https://github.com/jump-cellpainting/datasets/raw/refs/heads/main/metadata/compound.csv.gz | Direct download (Snakemake `download_JUMPCP`) | CSV (gzip) | Used for compound metadata alignment. |
+| DeepChem BBBP | N/A | https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/BBBP.csv | Direct download (Snakemake `download_DeepChem`) | CSV | Used to align compounds for annotation processing. |
+| DeepChem ToxCast | N/A | https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/toxcast_data.csv.gz | Direct download (Snakemake `download_DeepChem`) | CSV (gzip) | Converted into experiment matrices. |
+| DeepChem Tox21 | N/A | https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/tox21.csv.gz | Direct download (Snakemake `download_DeepChem`) | CSV (gzip) | Converted into experiment matrices. |
+| DeepChem SIDER | N/A | https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/sider.csv.gz | Direct download (Snakemake `download_DeepChem`) | CSV (gzip) | Converted into experiment matrices. |
+| DeepChem ClinTox | N/A | https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/clintox.csv.gz | Direct download (Snakemake `download_DeepChem`) | CSV (gzip) | Converted into experiment matrices. |
+| AnnotationDB compound list | live | https://annotationdb.bhklab.ca/compound/all | API request (Snakemake `fetch_AnnotationDB_raw`) | JSON | Used to enumerate compounds and request detailed records. |
+| AnnotationDB compound details | live | https://annotationdb.bhklab.ca/compound/many | Batched API requests (Snakemake `fetch_AnnotationDB_raw`) | JSON | Provides bioassays, mechanisms, and toxicity annotations. |
 
-For each data source, include the following information:
+For license and citation requirements, consult each source website or associated publication.
 
-### 1. External Data Sources
+## Generated datasets
 
-- **Name**: Official name of the dataset
-- **Version/Date**: Version number or access date
-- **URL**: Link to the data source
-- **Access Method**: How the data was obtained (direct download, API, etc.)
-- **Access Date**: When the data was accessed/retrieved
-- **Data Format**: Format of the data (FASTQ, DICOM, CSV, etc.)
-- **Citation**: Proper academic citation if applicable
-- **License**: Usage restrictions and attribution requirements
-
-Example:
-
-```markdown
-## TCGA RNA-Seq Data
-
-- **Name**: The Cancer Genome Atlas RNA-Seq Data
-- **Version**: Data release 28.0 - March 2021
-- **URL**: https://portal.gdc.cancer.gov/
-- **Access Method**: GDC Data Transfer Tool
-- **Access Date**: 2021-03-15
-- **Citation**: The Cancer Genome Atlas Network. (2012). Comprehensive molecular portraits of human breast tumours. Nature, 490(7418), 61-70.
-- **License**: [NIH Genomic Data Sharing Policy](https://sharing.nih.gov/genomic-data-sharing-policy)
-```
-
-### 2. Internal/Generated Data
-
-- **Name**: Descriptive name of the dataset
-- **Creation Date**: When the data was generated
-- **Creation Method**: Brief description of how the data was created
-- **Input Data**: What source data was used
-- **Processing Scripts**: References to scripts/Github Repo used to generate this data
-
-Example:
-
-```markdown
-## Processed RNA-Seq Data
-- **Name**: Processed RNA-Seq Data for TCGA-BRCA
-- **Creation Date**: 2021-04-01
-- **Creation Method**: Processed using kallisto and DESeq2
-- **Input Data**: FASTQ Data obtained from the SRA database
-- **Processing Scripts**: [GitHub Repo](https://github.com/tcga-brca-rnaseq)
-```
-
-### 3. Data Dictionary
-
-For complex datasets, include a data dictionary that explains:
-
-| Column Name | Data Type | Description | Units | Possible Values |
-|-------------|-----------|-------------|-------|-----------------|
-| patient_id  | string    | Unique patient identifier | N/A | TCGA-XX-XXXX format |
-| age         | integer   | Patient age at diagnosis | years | 18-100 |
-| expression  | float     | Gene expression value | TPM | Any positive value |
-
-## Best Practices
-
-- Store raw data in `data/rawdata/` and never modify it
-- Store processed data in `data/procdata/` and all code used to generate it should be in `workflow/scripts/`
-- Document all processing steps
-- Track data provenance (where data came from and how it was modified)
-- Respect data usage agreements and licenses!
-    This is especially important for data that should not be shared publicly
+| Dataset | Location | Created By | Inputs |
+| --- | --- | --- | --- |
+| BindingDB cleaned table | `data/rawdata/BINDING_DB/BindingDB_All_202512_cleaned.csv` | `workflow/rules/processBindingDB.smk` | BindingDB ZIP archive |
+| AnnotationDB JSONL | `data/rawdata/ANNOTATION_DB/compound_details.jsonl` | `workflow/scripts/fetch_annotationdb.py` | AnnotationDB API |
+| colData metadata | `data/procdata/colData.csv` | `workflow/scripts/process_annotationdb.py` | AnnotationDB JSONL, LINCS, JUMP-CP, BBBP |
+| Bioassay matrix | `data/procdata/experiments/bioassays.csv` | `workflow/scripts/process_annotationdb.py` | AnnotationDB JSONL |
+| BindingDB experiment matrix | `data/procdata/experiments/binding_db.csv` | `workflow/scripts/make_bindingdbd_experiments.py` | colData, BindingDB cleaned table |
+| DeepChem experiment matrices | `data/procdata/experiments/{toxcast,tox21,sider,clintox}.csv` | `workflow/scripts/make_deepchem_experiments.py` | colData, DeepChem CSVs |
+| Morgan fingerprints | `data/procdata/experiments/fingerprints/Morgan.*.csv` | `workflow/scripts/make_fingerprints.py` | colData SMILES |
+| HDD_v1 MAE | `data/results/HDD_v1.RDS` | `workflow/scripts/construct_MAE.R` | colData + experiment matrices |
