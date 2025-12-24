@@ -10,7 +10,7 @@ rule construct_MAE:
 		fingerprints = rules.make_fingerprints.output.fingerprints
 
 	output:
-		mae = dirs.RESULTS / "hdd.RDS"
+		mae = dirs.RESULTS / "HDD_v1.RDS"
 
 	shell:
 		"""

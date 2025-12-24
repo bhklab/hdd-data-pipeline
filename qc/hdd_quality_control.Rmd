@@ -1,5 +1,5 @@
 ---
-title: "Harmonized Drug Dataset"
+title: "Harmonized Drug Dataset Version 1 (HDD_v1)"
 author: "James Bannon, Michael Tran"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 output:
@@ -25,7 +25,7 @@ options(digits = 3)
 
 # Overview
 
-This report is a quality control walkthrough for the Harmonized Drug Dataset (HDD)
+This report is a quality control walkthrough for the Harmonized Drug Dataset Version 1 (HDD_v1)
 stored as a `MultiAssayExperiment` (MAE). The dataset harmonizes multiple drug-related
 assays and features across a shared compound universe (PubChem CID) so downstream analyses
 can operate on a consistent sample space.
@@ -44,7 +44,7 @@ Key sources (from `config/pipeline.yaml` and the workflow scripts) include:
 - **Bioassays**: pulled from the BHKLab AnnotationDB alongside compound metadata, then filtered to gold-standard assays.
 - **Fingerprints**: RDKit Morgan count fingerprints generated from SMILES.
 
-# Load HDD
+# Load HDD_v1
 
 ```{r load-data}
 library(MultiAssayExperiment)
@@ -55,14 +55,14 @@ library(dplyr)
 library(tidyr)
 library(glmnet)
 
-hdd <- readRDS("data/results/hdd.RDS")
-hdd
+hdd_v1 <- readRDS("data/results/HDD_v1.RDS")
+hdd_v1
 ```
 
 # MAE snapshot
 
 ```{r mae-snapshot}
-experiment_names <- names(experiments(hdd))
+experiment_names <- names(experiments(hdd_v1))
 experiment_names
 
 summarize_experiment <- function(se) {
@@ -87,7 +87,7 @@ summarize_experiment <- function(se) {
 
 experiment_summary <- do.call(
   rbind,
-  lapply(experiments(hdd), summarize_experiment)
+  lapply(experiments(hdd_v1), summarize_experiment)
 )
 rownames(experiment_summary) <- experiment_names
 experiment_summary
@@ -97,8 +97,8 @@ Basic sanity checks for sampleMap completeness.
 
 ```{r samplemap-checks}
 # Basic sampleMap sanity checks
-all_in_coldata <- lapply(experiments(hdd), function(se) {
-  all(colnames(se) %in% rownames(colData(hdd)))
+all_in_coldata <- lapply(experiments(hdd_v1), function(se) {
+  all(colnames(se) %in% rownames(colData(hdd_v1)))
 })
 if (all(unlist(all_in_coldata))) {
   print("All experiments map cleanly to colData.")
@@ -108,8 +108,8 @@ if (all(unlist(all_in_coldata))) {
 }
 
 # Any missing samples per experiment (only report issues)
-missing_samples <- lapply(experiments(hdd), function(se) {
-  setdiff(colnames(se), rownames(colData(hdd)))
+missing_samples <- lapply(experiments(hdd_v1), function(se) {
+  setdiff(colnames(se), rownames(colData(hdd_v1)))
 })
 missing_samples <- missing_samples[lengths(missing_samples) > 0]
 if (length(missing_samples) == 0) {
@@ -123,7 +123,7 @@ if (length(missing_samples) == 0) {
 # colData overview
 
 ```{r coldata-overview}
-cd <- colData(hdd)
+cd <- colData(hdd_v1)
 cd[1:5, 1:min(10, ncol(cd))]
 
 # Quick missingness scan
@@ -143,7 +143,7 @@ c(
 
 # Experiment walkthroughs
 
-Below, each experiment in the HDD MAE is reviewed.
+Below, each experiment in the HDD_v1 MAE is reviewed.
 
 ## BindingDB
 
@@ -151,7 +151,7 @@ A compound-by-target affinity matrix derived from BindingDB. Rows correspond
 to protein targets and columns are PubChem CIDs. Values are affinity measurements in nM.
 
 ```{r bindingdb-preview}
-se <- experiments(hdd)[["BindingDB"]]
+se <- experiments(hdd_v1)[["BindingDB"]]
 assay_mat <- assay(se)
 
 # Dimensions and a small preview
@@ -210,7 +210,7 @@ A compound-by-assay matrix of PubChem bioassay outcomes. Rows are AIDs
 Inactive, Not Measured).
 
 ```{r bioassays-preview}
-se <- experiments(hdd)[["Bioassays"]]
+se <- experiments(hdd_v1)[["Bioassays"]]
 assay_mat <- assay(se)
 
 c(rows = nrow(assay_mat), cols = ncol(assay_mat))
@@ -263,7 +263,7 @@ columns are PubChem CIDs. Values are typically binary (0/1) with missing values 
 unmeasured compounds.
 
 ```{r tox21-preview}
-se <- experiments(hdd)[["Tox21"]]
+se <- experiments(hdd_v1)[["Tox21"]]
 assay_mat <- assay(se)
 
 c(rows = nrow(assay_mat), cols = ncol(assay_mat))
@@ -320,7 +320,7 @@ A compound-by-assay matrix for the ToxCast panel. Rows are assay endpoints
 and columns are PubChem CIDs. Values are typically binary (0/1) with missing values.
 
 ```{r toxcast-preview}
-se <- experiments(hdd)[["ToxCast"]]
+se <- experiments(hdd_v1)[["ToxCast"]]
 assay_mat <- assays(se)[[1]]
 
 c(rows = nrow(assay_mat), cols = ncol(assay_mat))
@@ -387,7 +387,7 @@ to the ClinTox labels (e.g., FDA approval and toxicity) and columns are PubChem 
 Values are binary (0/1) with missing values for compounds not present in the source dataset.
 
 ```{r clintox-preview}
-se <- experiments(hdd)[["ClinTox"]]
+se <- experiments(hdd_v1)[["ClinTox"]]
 assay_mat <- assay(se)
 
 c(rows = nrow(assay_mat), cols = ncol(assay_mat))
@@ -455,7 +455,7 @@ categories and columns are PubChem CIDs. Values are binary (0/1) with missing va
 a compound is not represented.
 
 ```{r sider-preview}
-se <- experiments(hdd)[["SIDER"]]
+se <- experiments(hdd_v1)[["SIDER"]]
 assay_mat <- assay(se)
 
 c(rows = nrow(assay_mat), cols = ncol(assay_mat))
@@ -529,7 +529,7 @@ fp_names
 
 ```{r fingerprints-preview}
 for (fp_name in fp_names) {
-  se <- experiments(hdd)[[fp_name]]
+  se <- experiments(hdd_v1)[[fp_name]]
   assay_mat <- assays(se)[[1]]
 
   cat("\nFingerprint:", fp_name, "\n")
@@ -547,7 +547,7 @@ for (fp_name in fp_names) {
 
 ```{r fingerprints-plots, fig.height=5, fig.width=8}
 for (fp_name in fp_names) {
-  se <- experiments(hdd)[[fp_name]]
+  se <- experiments(hdd_v1)[[fp_name]]
   assay_mat <- assays(se)[[1]]
 
   col_nnz <- Matrix::colSums(assay_mat > 0)
@@ -593,7 +593,7 @@ for (fp_name in fp_names) {
 We now turn to a machine learning task. We will be trying to predict the drugs mechanism of action (MOA) from the drug structures as stored in the fingerprints. Specifically we will try to classify drugs by how likely they are to cause liver injury based on their Drug Induced Liver Injury (DILI) severity score. First lets look at the counts of the scores:
 
 ```{r moa-counts}
-col.Data <- colData(hdd) %>% as.data.frame() 
+col.Data <- colData(hdd_v1) %>% as.data.frame() 
 table(col.Data$DILI.Severity)
 ```
 
@@ -613,7 +613,7 @@ Now lets make training and testing datasts using the Morgan fingerprint with rad
 ```{r making-fp-data}
 set.seed(1234)
 
-fps <- assays(hdd)[["fingerprint.Morgan.3.512"]]
+fps <- assays(hdd_v1)[["fingerprint.Morgan.3.512"]]
 
 fp.cids <- colnames(fps)
 high.cids <- intersect(as.character(dili.High$Pubchem.CID), fp.cids)

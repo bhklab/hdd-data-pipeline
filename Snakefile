@@ -13,4 +13,4 @@ include: "workflow/rules/construct_mae.smk"
 
 rule all:
 	input:
-		dirs.RESULTS / "hdd.RDS"
+		dirs.RESULTS / "HDD_v1.RDS"
