@@ -17,3 +17,16 @@ rule construct_MAE:
 		mkdir -p {dirs.RESULTS}
 		Rscript ./workflow/scripts/construct_MAE.R
 		"""
+
+
+rule export_MAE_csvs:
+	input:
+		mae = rules.construct_MAE.output.mae
+
+	output:
+		outdir = directory(dirs.RESULTS / "HDD_v1_csv")
+
+	shell:
+		"""
+		Rscript ./workflow/scripts/export_mae_csvs.R {input.mae} {output.outdir}
+		"""

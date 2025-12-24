@@ -28,6 +28,10 @@ This directory contains the executable scripts used by the Snakemake workflow to
   - Assembles all experiment matrices and colData into a `MultiAssayExperiment`.
   - Output: `data/results/HDD_v1.RDS`.
 
+- `export_mae_csvs.R`
+  - Exports MAE-backed CSVs for parity with the RDS output.
+  - Output: `data/results/HDD_v1_csvs/`.
+
 - `utils.py`
   - Helper functions shared by AnnotationDB processing scripts (assay filters, field parsing, etc.).
 
