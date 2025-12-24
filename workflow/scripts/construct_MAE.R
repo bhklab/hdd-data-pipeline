@@ -29,7 +29,8 @@ bdb <- read.csv(
 bioassays <- read.csv(
   "data/procdata/experiments/bioassays.csv",
   row.names = 1,
-  check.names = FALSE
+  check.names = FALSE,
+  na.strings = c("Not Measured")
 )
 toxcast <- read.csv(
   "data/procdata/experiments/toxcast.csv",
